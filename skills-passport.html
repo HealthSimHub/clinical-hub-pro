@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Health Sim Hub — Skills Passport</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0f2240;
+  --navy-mid: #1a3a5c;
+  --teal: #0a7e74;
+  --teal-light: #0fb8a8;
+  --gold: #c8972a;
+  --gold-light: #f0be5a;
+  --p1: #2563eb;
+  --p1-bg: #dbeafe;
+  --p2: #16a34a;
+  --p2-bg: #dcfce7;
+  --p3: #ca8a04;
+  --p3-bg: #fef9c3;
+  --locked: #94a3b8;
+  --locked-bg: #f1f5f9;
+  --ink: #1e293b;
+  --paper: #f8fafc;
+  --white: #ffffff;
+  --shadow: 0 4px 24px rgba(15,34,64,0.12);
+  --radius: 14px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--navy);
+  min-height: 100vh;
+  color: var(--ink);
+}
+
+/* ── SETUP SCREEN ── */
+#setup-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--navy) 0%, #0a2a4a 50%, #0a3320 100%);
+  padding: 2rem;
+}
+
+.setup-card {
+  background: var(--white);
+  border-radius: 24px;
+  padding: 3rem;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 32px 64px rgba(0,0,0,0.4);
+}
+
+.setup-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.25em;
+  color: var(--teal);
+  margin-bottom: 0.25rem;
+}
+
+.setup-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3.5rem;
+  line-height: 1;
+  color: var(--navy);
+  margin-bottom: 0.25rem;
+}
+
+.setup-subtitle {
+  font-size: 1.1rem;
+  color: var(--gold);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+}
+
+.setup-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  display: block;
+}
+
+.setup-card label {
+  display: block;
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--navy-mid);
+  margin-bottom: 0.4rem;
+  margin-top: 1.25rem;
+}
+
+.setup-card input, .setup-card select {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.setup-card input:focus, .setup-card select:focus {
+  border-color: var(--teal);
+}
+
+.btn-start {
+  margin-top: 2rem;
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, var(--teal) 0%, var(--teal-light) 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 16px rgba(10,126,116,0.3);
+}
+.btn-start:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(10,126,116,0.4); }
+
+/* ── MAIN APP ── */
+#app { display: none; }
+
+.app-header {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-logo-text {
+  font-family: 'Bebas Neue', sans-serif;
+}
+
+.header-logo-text .top { font-size: 0.7rem; letter-spacing: 0.2em; color: var(--teal-light); display: block; }
+.header-logo-text .main { font-size: 1.5rem; line-height: 1; color: white; display: block; }
+.header-logo-text .sub { font-size: 0.65rem; letter-spacing: 0.15em; color: var(--gold-light); display: block; }
+
+.header-student {
+  text-align: center;
+  flex: 1;
+}
+
+.header-student .name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  color: white;
+  line-height: 1;
+}
+
+.header-student .cohort {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+}
+
+.header-progress {
+  text-align: right;
+  min-width: 140px;
+}
+
+.progress-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 0.3rem;
+}
+
+.progress-bar-wrap {
+  background: rgba(255,255,255,0.1);
+  border-radius: 99px;
+  height: 8px;
+  overflow: hidden;
+  margin-bottom: 0.25rem;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--teal) 0%, var(--teal-light) 100%);
+  border-radius: 99px;
+  transition: width 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.progress-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--gold-light);
+}
+
+/* ── CONTENT ── */
+.app-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* ── PHASE SECTION ── */
+.phase-section {
+  margin-bottom: 2.5rem;
+}
+
+.phase-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius);
+  position: relative;
+  overflow: hidden;
+}
+
+.phase-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.15;
+}
+
+.phase-1 .phase-header { background: #1e3a8a; }
+.phase-2 .phase-header { background: #14532d; }
+.phase-3 .phase-header { background: #713f12; }
+
+.phase-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.5rem;
+  line-height: 1;
+  opacity: 0.4;
+  color: white;
+  min-width: 2.5rem;
+}
+
+.phase-info { flex: 1; }
+.phase-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 0.05em;
+  color: white;
+  line-height: 1;
+}
+.phase-weeks {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.6);
+  letter-spacing: 0.05em;
+  margin-top: 0.15rem;
+}
+
+.phase-tally {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.1);
+  padding: 0.3rem 0.7rem;
+  border-radius: 99px;
+}
+
+/* ── BADGE GRID ── */
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+/* ── BADGE CARD ── */
+.badge-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 1.25rem 1rem;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid transparent;
+}
+
+.badge-card.locked {
+  background: var(--locked-bg);
+  border-color: #e2e8f0;
+}
+
+.badge-card.earned {
+  border-color: var(--teal-light);
+  box-shadow: 0 0 0 3px rgba(10,184,168,0.12), var(--shadow);
+}
+
+.badge-card.earned::after {
+  content: '✓';
+  position: absolute;
+  top: 0.5rem;
+  right: 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--teal);
+  background: #e0fdf4;
+  border-radius: 99px;
+  width: 1.4rem;
+  height: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge-week {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 0.6rem;
+}
+
+.locked .badge-week { color: var(--locked); }
+.phase-1 .badge-week { color: var(--p1); }
+.phase-2 .badge-week { color: var(--p2); }
+.phase-3 .badge-week { color: var(--p3); }
+
+.badge-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  display: block;
+  transition: transform 0.3s;
+  filter: grayscale(0);
+}
+
+.locked .badge-icon {
+  filter: grayscale(1);
+  opacity: 0.35;
+}
+
+.badge-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 0.25rem;
+}
+
+.locked .badge-name { color: var(--locked); }
+.earned .badge-name { color: var(--navy); }
+.phase-1 .badge-card:not(.locked) .badge-name { color: var(--navy); }
+
+.badge-topic {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  line-height: 1.3;
+  margin-bottom: 0.75rem;
+}
+
+.earned .badge-topic { color: #64748b; }
+
+.badge-date {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--teal);
+  background: #e0fdf4;
+  border-radius: 99px;
+  padding: 0.2rem 0.6rem;
+  display: inline-block;
+}
+
+.badge-pending {
+  font-size: 0.65rem;
+  color: var(--locked);
+  font-style: italic;
+}
+
+/* Instructor stamp button — only visible in instructor mode */
+.stamp-btn {
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.9rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: none;
+}
+
+.instructor-mode .stamp-btn { display: inline-block; }
+
+.locked .stamp-btn {
+  background: var(--teal);
+  color: white;
+}
+.locked .stamp-btn:hover { background: var(--teal-light); }
+
+.earned .stamp-btn {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.earned .stamp-btn:hover { background: #fca5a5; }
+
+/* ── TOOLBAR ── */
+.toolbar {
+  background: rgba(255,255,255,0.06);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.toolbar-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.mode-toggle {
+  display: flex;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.mode-btn {
+  padding: 0.35rem 0.9rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: transparent;
+  color: #94a3b8;
+}
+
+.mode-btn.active {
+  background: var(--teal);
+  color: white;
+}
+
+.btn-print {
+  margin-left: auto;
+  padding: 0.45rem 1.1rem;
+  background: var(--gold);
+  color: var(--navy);
+  border: none;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.03em;
+}
+.btn-print:hover { background: var(--gold-light); }
+
+/* ── STAMP ANIMATION ── */
+@keyframes stampIn {
+  0%   { transform: scale(3) rotate(-15deg); opacity: 0; }
+  60%  { transform: scale(0.9) rotate(2deg); opacity: 1; }
+  80%  { transform: scale(1.05) rotate(-1deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.badge-card.just-earned .badge-icon {
+  animation: stampIn 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+
+/* ── SUMMARY BANNER ── */
+.summary-banner {
+  background: linear-gradient(135deg, var(--teal) 0%, var(--navy-mid) 100%);
+  border-radius: var(--radius);
+  padding: 1.5rem 2rem;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.summary-stat { text-align: center; }
+.summary-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.5rem;
+  color: white;
+  line-height: 1;
+}
+.summary-lbl {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+  margin-top: 0.1rem;
+}
+
+.summary-divider {
+  width: 1px;
+  height: 48px;
+  background: rgba(255,255,255,0.15);
+}
+
+.ccma-bar {
+  flex: 1;
+  min-width: 200px;
+}
+
+.ccma-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 0.4rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.ccma-track {
+  background: rgba(255,255,255,0.15);
+  border-radius: 99px;
+  height: 12px;
+  overflow: hidden;
+}
+
+.ccma-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 100%);
+  border-radius: 99px;
+  transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+/* ── PRINT ── */
+@media print {
+  body { background: white; }
+  .app-header { position: relative; background: var(--navy) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .toolbar { display: none; }
+  .phase-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .badge-card { break-inside: avoid; border: 1px solid #e2e8f0 !important; }
+  .stamp-btn { display: none !important; }
+  .badge-card.earned { background: #f0fdf9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen">
+  <div class="setup-card">
+    <span class="setup-icon">🏥</span>
+    <div class="setup-logo">HEALTH SIM HUB</div>
+    <div class="setup-title">Skills Passport</div>
+    <div class="setup-subtitle">Train · Learn · Earn</div>
+
+    <label for="input-name">Your Full Name</label>
+    <input type="text" id="input-name" placeholder="e.g. Jordan Williams" />
+
+    <label for="input-cohort">Cohort</label>
+    <select id="input-cohort">
+      <option value="">Select your cohort...</option>
+      <option value="Fall 2025 (Aug–Dec)">Fall 2025 (Aug–Dec)</option>
+      <option value="Spring 2026 (Jan–May)">Spring 2026 (Jan–May)</option>
+      <option value="Fall 2026 (Aug–Dec)">Fall 2026 (Aug–Dec)</option>
+      <option value="Spring 2027 (Jan–May)">Spring 2027 (Jan–May)</option>
+    </select>
+
+    <button class="btn-start" onclick="startPassport()">REPORT FOR DUTY →</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="header-logo-text">
+        <span class="top">HEALTH SIM HUB</span>
+        <span class="main">Skills Passport</span>
+        <span class="sub">CCMA · 18 WEEKS</span>
+      </div>
+    </div>
+    <div class="header-student">
+      <div class="name" id="display-name">—</div>
+      <div class="cohort" id="display-cohort">—</div>
+    </div>
+    <div class="header-progress">
+      <div class="progress-label">Overall Progress</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="header-bar" style="width:0%"></div>
+      </div>
+      <div class="progress-count" id="header-count">0 / 18 badges</div>
+    </div>
+  </header>
+
+  <div class="app-content">
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <span class="toolbar-label">Mode</span>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="btn-student" onclick="setMode('student')">👩‍🎓 Student</button>
+        <button class="mode-btn" id="btn-instructor" onclick="setMode('instructor')">👩‍🏫 Instructor</button>
+      </div>
+      <span class="toolbar-label" id="mode-hint" style="color:#64748b;font-weight:400;text-transform:none;letter-spacing:0">Student view — read-only</span>
+      <button class="btn-print no-print" onclick="window.print()">🖨 Print Passport</button>
+    </div>
+
+    <!-- Summary Banner -->
+    <div class="summary-banner" id="summary-banner">
+      <div class="summary-stat">
+        <div class="summary-num" id="sum-earned">0</div>
+        <div class="summary-lbl">Badges Earned</div>
+      </div>
+      <div class="summary-divider"></div>
+      <div class="summary-stat">
+        <div class="summary-num" id="sum-remaining">18</div>
+        <div class="summary-lbl">Remaining</div>
+      </div>
+      <div class="summary-divider"></div>
+      <div class="summary-stat">
+        <div class="summary-num" id="sum-pct">0%</div>
+        <div class="summary-lbl">Complete</div>
+      </div>
+      <div class="summary-divider"></div>
+      <div class="ccma-bar">
+        <div class="ccma-label">
+          <span>CCMA Certification Readiness</span>
+          <span id="ccma-pct">0%</span>
+        </div>
+        <div class="ccma-track">
+          <div class="ccma-fill" id="ccma-bar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Badge Phases -->
+    <div id="badge-container"></div>
+
+  </div>
+</div>
+
+<script>
+const BADGES = [
+  // ── PHASE 1 ──
+  { phase: 1, week: 1,  icon: '🏥', name: 'Welcome to the Clinic',     topic: 'Roles & Responsibilities',        nha: 'Module 1 + 12' },
+  { phase: 1, week: 2,  icon: '🗣️', name: 'Clear Communicator',        topic: 'Communication & Customer Service', nha: 'Module 12' },
+  { phase: 1, week: 3,  icon: '⚖️', name: 'Ethics Champion',           topic: 'Medical Ethics, Law & Compliance', nha: 'Module 13' },
+  { phase: 1, week: 4,  icon: '🧠', name: 'Anatomy Ace',               topic: 'A&P Overview + Med Terminology',   nha: 'Module 2' },
+  { phase: 1, week: 5,  icon: '🧤', name: 'Infection Fighter',         topic: 'Infection Control & Safety',       nha: 'Module 6' },
+  // ── PHASE 2 ──
+  { phase: 2, week: 6,  icon: '💓', name: 'Vitals Pro',                topic: 'Vital Signs & Patient Assessment', nha: 'Module 3' },
+  { phase: 2, week: 7,  icon: '📋', name: 'Intake Specialist',         topic: 'Patient Intake & History',         nha: 'Module 3' },
+  { phase: 2, week: 8,  icon: '💊', name: 'Medication Ready',          topic: 'General Patient Care Pt. 1',       nha: 'Module 4' },
+  { phase: 2, week: 9,  icon: '🩺', name: 'Sterile Technique',         topic: 'General Patient Care Pt. 2',       nha: 'Module 5' },
+  { phase: 2, week: 10, icon: '🩸', name: 'Phlebotomy Certified',      topic: 'Phlebotomy',                       nha: 'Module 8' },
+  { phase: 2, week: 11, icon: '🔬', name: 'Lab Ready',                 topic: 'Lab / Point of Care Testing',      nha: 'Module 7' },
+  { phase: 2, week: 12, icon: '💗', name: 'EKG Technician',            topic: 'EKG & Cardiovascular Testing',     nha: 'Module 9' },
+  { phase: 2, week: 13, icon: '💉', name: 'Medication Admin',          topic: 'Pharmacology & Medication Admin',  nha: 'Module 1 (Pharm)' },
+  // ── PHASE 3 ──
+  { phase: 3, week: 14, icon: '🖥️', name: 'Front Desk Ready',         topic: 'Administrative Assisting',         nha: 'Module 11' },
+  { phase: 3, week: 15, icon: '💰', name: 'Billing Specialist',        topic: 'Billing, Coding & EMR',            nha: 'Module 11' },
+  { phase: 3, week: 16, icon: '🤝', name: 'Care Coordinator',          topic: 'Patient Care Coordination',        nha: 'Module 10' },
+  { phase: 3, week: 17, icon: '🏆', name: 'Clinic Shift Complete',     topic: 'Full Clinic Simulation',            nha: 'All Modules' },
+  { phase: 3, week: 18, icon: '🎓', name: 'CCMA Ready',                topic: 'Exam Prep & Certification',         nha: 'All Modules' },
+];
+
+const PHASE_META = {
+  1: { label: 'Foundation',            weeks: 'Weeks 1–5',  color: 'phase-1' },
+  2: { label: 'Clinical Skills',       weeks: 'Weeks 6–13', color: 'phase-2' },
+  3: { label: 'Admin & Clinic Sim',    weeks: 'Weeks 14–18',color: 'phase-3' },
+};
+
+let state = {
+  name: '',
+  cohort: '',
+  mode: 'student',
+  earned: {} // { weekNum: 'YYYY-MM-DD' }
+};
+
+function startPassport() {
+  const name = document.getElementById('input-name').value.trim();
+  const cohort = document.getElementById('input-cohort').value;
+  if (!name) { alert('Please enter your name.'); return; }
+  if (!cohort) { alert('Please select your cohort.'); return; }
+  state.name = name;
+  state.cohort = cohort;
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('display-name').textContent = name;
+  document.getElementById('display-cohort').textContent = cohort;
+  renderAll();
+}
+
+function setMode(mode) {
+  state.mode = mode;
+  document.getElementById('btn-student').classList.toggle('active', mode === 'student');
+  document.getElementById('btn-instructor').classList.toggle('active', mode === 'instructor');
+  document.getElementById('mode-hint').textContent = mode === 'instructor'
+    ? 'Instructor mode — click badges to stamp or remove'
+    : 'Student view — read-only';
+  document.getElementById('badge-container').classList.toggle('instructor-mode', mode === 'instructor');
+  renderAll();
+}
+
+function toggleBadge(week) {
+  if (state.mode !== 'instructor') return;
+  if (state.earned[week]) {
+    delete state.earned[week];
+  } else {
+    const today = new Date().toISOString().split('T')[0];
+    state.earned[week] = today;
+    // animate
+    setTimeout(() => {
+      const card = document.querySelector(`[data-week="${week}"]`);
+      if (card) {
+        card.classList.add('just-earned');
+        setTimeout(() => card.classList.remove('just-earned'), 600);
+      }
+    }, 10);
+  }
+  renderAll();
+}
+
+function renderAll() {
+  renderBadges();
+  updateStats();
+}
+
+function renderBadges() {
+  const container = document.getElementById('badge-container');
+  const phases = [1, 2, 3];
+  container.innerHTML = '';
+  container.className = state.mode === 'instructor' ? 'instructor-mode' : '';
+
+  phases.forEach(p => {
+    const meta = PHASE_META[p];
+    const pBadges = BADGES.filter(b => b.phase === p);
+    const earnedInPhase = pBadges.filter(b => state.earned[b.week]).length;
+
+    const section = document.createElement('div');
+    section.className = `phase-section phase-${p}`;
+
+    // Phase header
+    const ph = document.createElement('div');
+    ph.className = `phase-header`;
+    ph.innerHTML = `
+      <div class="phase-num">0${p}</div>
+      <div class="phase-info">
+        <div class="phase-name">Phase ${p} — ${meta.label}</div>
+        <div class="phase-weeks">${meta.weeks}</div>
+      </div>
+      <div class="phase-tally">${earnedInPhase} / ${pBadges.length}</div>
+    `;
+    section.appendChild(ph);
+
+    // Badge grid
+    const grid = document.createElement('div');
+    grid.className = 'badge-grid';
+
+    pBadges.forEach(b => {
+      const isEarned = !!state.earned[b.week];
+      const card = document.createElement('div');
+      card.className = `badge-card ${isEarned ? 'earned' : 'locked'}`;
+      card.dataset.week = b.week;
+
+      const dateStr = isEarned ? state.earned[b.week] : null;
+
+      card.innerHTML = `
+        <div class="badge-week">Week ${b.week} · ${b.nha}</div>
+        <span class="badge-icon">${b.icon}</span>
+        <div class="badge-name">${b.name}</div>
+        <div class="badge-topic">${b.topic}</div>
+        ${isEarned
+          ? `<div class="badge-date">✓ Earned ${dateStr}</div>`
+          : `<div class="badge-pending">Not yet earned</div>`
+        }
+        <button class="stamp-btn" onclick="toggleBadge(${b.week})">
+          ${isEarned ? '✕ Remove' : '🏅 Stamp Badge'}
+        </button>
+      `;
+      grid.appendChild(card);
+    });
+
+    section.appendChild(grid);
+    container.appendChild(section);
+  });
+}
+
+function updateStats() {
+  const total = BADGES.length;
+  const earned = Object.keys(state.earned).length;
+  const remaining = total - earned;
+  const pct = Math.round((earned / total) * 100);
+
+  document.getElementById('sum-earned').textContent = earned;
+  document.getElementById('sum-remaining').textContent = remaining;
+  document.getElementById('sum-pct').textContent = pct + '%';
+  document.getElementById('ccma-pct').textContent = pct + '%';
+  document.getElementById('ccma-bar').style.width = pct + '%';
+  document.getElementById('header-bar').style.width = pct + '%';
+  document.getElementById('header-count').textContent = `${earned} / ${total} badges`;
+}
+</script>
+</body>
+</html>
