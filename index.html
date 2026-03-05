@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HealthSim Hub · SimClinic Desktop</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #070e1a;
+  --bg2:       #0c1628;
+  --bg3:       #111f38;
+  --panel:     #0d1a2e;
+  --border:    #1a3050;
+  --border2:   #243d5e;
+  --teal:      #00c9b8;
+  --teal2:     #00a89a;
+  --teal-dim:  rgba(0,201,184,.12);
+  --teal-glow: rgba(0,201,184,.25);
+  --blue:      #1a6bb5;
+  --blue2:     #2580d4;
+  --gold:      #f0b429;
+  --gold-dim:  rgba(240,180,41,.12);
+  --red:       #ef4444;
+  --green:     #10b981;
+  --white:     #e8f0f8;
+  --white2:    #c0cfe0;
+  --muted:     #5a7a99;
+  --mono:      'IBM Plex Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--bg);
+  color: var(--white);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ── SCANLINE TEXTURE ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,.08) 2px,
+    rgba(0,0,0,.08) 4px
+  );
+}
+
+/* ── BACKGROUND GLOW ── */
+body::after {
+  content: '';
+  position: fixed;
+  top: -20%; left: 50%; transform: translateX(-50%);
+  width: 900px; height: 500px;
+  background: radial-gradient(ellipse, rgba(0,100,180,.18) 0%, transparent 70%);
+  z-index: 0; pointer-events: none;
+}
+
+/* ── STATUS BAR ── */
+.statusbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(7,14,26,.95);
+  border-bottom: 1px solid var(--border);
+  padding: 0 1.5rem;
+  height: 36px;
+  display: flex; align-items: center; justify-content: space-between;
+  backdrop-filter: blur(8px);
+}
+.sb-left { display: flex; align-items: center; gap: 1.5rem; }
+.sb-logo {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: .85rem; font-weight: 700; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--teal);
+}
+.sb-sep { width: 1px; height: 16px; background: var(--border); }
+.sb-status {
+  display: flex; align-items: center; gap: .4rem;
+  font-family: var(--mono); font-size: .68rem; color: var(--muted);
+}
+.sb-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+  box-shadow: 0 0 6px var(--green); animation: pulse 2.5s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+.sb-right { display: flex; align-items: center; gap: 1.25rem; }
+.sb-time {
+  font-family: var(--mono); font-size: .72rem; color: var(--white2);
+  letter-spacing: .06em;
+}
+.sb-badge {
+  font-family: var(--mono); font-size: .62rem; font-weight: 500;
+  padding: .15rem .55rem; border-radius: 3px; letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.sb-badge.student { background: rgba(26,107,181,.3); color: #60a5fa; border: 1px solid rgba(26,107,181,.5); }
+.sb-badge.instructor { background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(240,180,41,.4); }
+
+/* ── ROLE SWITCHER ── */
+.role-bar {
+  position: fixed; top: 36px; left: 0; right: 0; z-index: 99;
+  background: rgba(11,22,42,.9);
+  border-bottom: 1px solid var(--border);
+  padding: 0 1.5rem;
+  height: 44px;
+  display: flex; align-items: center; gap: .5rem;
+  backdrop-filter: blur(8px);
+}
+.role-label {
+  font-family: var(--mono); font-size: .65rem; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .1em; margin-right: .25rem;
+}
+.role-btn {
+  padding: .28rem .85rem; border-radius: 4px; font-family: 'Rajdhani', sans-serif;
+  font-size: .8rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  cursor: pointer; border: 1px solid var(--border2); background: transparent;
+  color: var(--muted); transition: all .2s;
+}
+.role-btn.active.student { background: rgba(26,107,181,.2); color: #60a5fa; border-color: #1a6bb5; }
+.role-btn.active.instructor { background: var(--gold-dim); color: var(--gold); border-color: rgba(240,180,41,.5); }
+.role-btn:not(.active):hover { border-color: var(--border2); color: var(--white2); }
+.role-divider { margin-left: auto; font-family: var(--mono); font-size: .65rem; color: var(--muted); }
+
+/* ── MAIN ── */
+.main {
+  position: relative; z-index: 1;
+  padding: 110px 2rem 3rem;
+  max-width: 1280px; margin: 0 auto;
+}
+
+/* ── HERO ── */
+.hero {
+  text-align: center;
+  margin-bottom: 3rem;
+  animation: fadeUp .6s ease both;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+.hero-eyebrow {
+  font-family: var(--mono); font-size: .72rem; letter-spacing: .25em;
+  text-transform: uppercase; color: var(--teal); margin-bottom: .75rem;
+  display: flex; align-items: center; justify-content: center; gap: .75rem;
+}
+.hero-eyebrow::before, .hero-eyebrow::after {
+  content: ''; width: 40px; height: 1px; background: var(--teal); opacity: .4;
+}
+.hero-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(2.2rem, 5vw, 3.8rem);
+  font-weight: 700; letter-spacing: .04em; line-height: 1;
+  color: var(--white);
+  text-shadow: 0 0 40px rgba(0,201,184,.2);
+  margin-bottom: .5rem;
+}
+.hero-title span { color: var(--teal); }
+.hero-sub {
+  font-size: .9rem; color: var(--white2); font-weight: 300;
+  letter-spacing: .04em; margin-bottom: 1.5rem;
+}
+.hero-stats {
+  display: inline-flex; gap: 2rem;
+  padding: .6rem 1.75rem; border-radius: 6px;
+  background: rgba(13,26,46,.8); border: 1px solid var(--border);
+}
+.hs { font-family: var(--mono); font-size: .7rem; color: var(--muted); }
+.hs strong { display: block; font-size: 1.1rem; color: var(--white); margin-bottom: .1rem; }
+
+/* ── SECTION LABEL ── */
+.section-label {
+  display: flex; align-items: center; gap: .75rem;
+  font-family: var(--mono); font-size: .68rem; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: 1rem;
+}
+.section-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* ── TOOL GRID ── */
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+/* ── TOOL CARD ── */
+.tool-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  transition: all .25s;
+  cursor: pointer;
+  text-decoration: none;
+  display: flex; flex-direction: column;
+  animation: fadeUp .5s ease both;
+}
+.tool-card:nth-child(1){animation-delay:.05s}
+.tool-card:nth-child(2){animation-delay:.1s}
+.tool-card:nth-child(3){animation-delay:.15s}
+.tool-card:nth-child(4){animation-delay:.2s}
+.tool-card:nth-child(5){animation-delay:.25s}
+.tool-card:nth-child(6){animation-delay:.3s}
+.tool-card:nth-child(7){animation-delay:.35s}
+.tool-card:nth-child(8){animation-delay:.4s}
+
+.tool-card:not(.coming-soon):hover {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 1px var(--teal), 0 8px 32px rgba(0,201,184,.12);
+  transform: translateY(-2px);
+}
+.tool-card:not(.coming-soon):hover .card-arrow { opacity: 1; transform: translateX(0); }
+.tool-card:not(.coming-soon):hover .card-accent { opacity: 1; }
+
+.card-accent {
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  opacity: .4; transition: opacity .25s;
+}
+.card-accent.teal  { background: linear-gradient(90deg, var(--teal), transparent); }
+.card-accent.blue  { background: linear-gradient(90deg, var(--blue2), transparent); }
+.card-accent.gold  { background: linear-gradient(90deg, var(--gold), transparent); }
+.card-accent.green { background: linear-gradient(90deg, var(--green), transparent); }
+.card-accent.purple{ background: linear-gradient(90deg, #8b5cf6, transparent); }
+.card-accent.rose  { background: linear-gradient(90deg, #f43f5e, transparent); }
+
+.card-inner { padding: 1.25rem 1.25rem 1rem; flex: 1; display: flex; flex-direction: column; }
+
+.card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: .85rem; }
+.card-icon {
+  width: 46px; height: 46px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; flex-shrink: 0;
+  position: relative;
+}
+.card-icon.teal   { background: rgba(0,201,184,.12); border: 1px solid rgba(0,201,184,.2); }
+.card-icon.blue   { background: rgba(37,128,212,.12); border: 1px solid rgba(37,128,212,.2); }
+.card-icon.gold   { background: rgba(240,180,41,.12); border: 1px solid rgba(240,180,41,.2); }
+.card-icon.green  { background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.2); }
+.card-icon.purple { background: rgba(139,92,246,.12); border: 1px solid rgba(139,92,246,.2); }
+.card-icon.rose   { background: rgba(244,63,94,.12);  border: 1px solid rgba(244,63,94,.2); }
+
+.card-badges { display: flex; flex-direction: column; gap: .3rem; align-items: flex-end; }
+.card-badge {
+  font-family: var(--mono); font-size: .58rem; font-weight: 500;
+  padding: .15rem .5rem; border-radius: 3px;
+  text-transform: uppercase; letter-spacing: .08em;
+}
+.cb-live    { background: rgba(16,185,129,.15); color: var(--green); border: 1px solid rgba(16,185,129,.3); }
+.cb-soon    { background: rgba(90,122,153,.1);  color: var(--muted); border: 1px solid var(--border); }
+.cb-student { background: rgba(96,165,250,.1);  color: #60a5fa;      border: 1px solid rgba(96,165,250,.25); }
+.cb-instr   { background: var(--gold-dim);       color: var(--gold);  border: 1px solid rgba(240,180,41,.3); }
+.cb-both    { background: rgba(0,201,184,.1);    color: var(--teal);  border: 1px solid rgba(0,201,184,.25); }
+
+.card-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.15rem; font-weight: 700; letter-spacing: .04em;
+  color: var(--white); margin-bottom: .3rem;
+}
+.card-desc {
+  font-size: .8rem; color: var(--white2); line-height: 1.55;
+  font-weight: 300; flex: 1;
+}
+
+.card-footer {
+  padding: .7rem 1.25rem;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(0,0,0,.15);
+}
+.card-meta {
+  font-family: var(--mono); font-size: .64rem; color: var(--muted);
+  display: flex; align-items: center; gap: .5rem;
+}
+.card-meta-dot { width: 5px; height: 5px; border-radius: 50%; }
+.card-meta-dot.green { background: var(--green); box-shadow: 0 0 5px var(--green); }
+.card-meta-dot.muted { background: var(--muted); }
+.card-arrow {
+  font-family: var(--mono); font-size: .72rem; color: var(--teal);
+  opacity: 0; transform: translateX(-4px); transition: all .2s;
+}
+
+/* coming soon overlay */
+.coming-soon { cursor: default; opacity: .7; }
+.coming-soon:hover { transform: none; box-shadow: none; border-color: var(--border); }
+.cs-overlay {
+  position: absolute; inset: 0; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(7,14,26,.6); backdrop-filter: blur(1px);
+  border-radius: 10px;
+}
+.cs-tag {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: .85rem; font-weight: 700; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--muted);
+  border: 1px solid var(--border2); padding: .4rem 1rem;
+  border-radius: 4px; background: var(--bg2);
+}
+
+/* ── GUIDE STRIP ── */
+.guide-strip {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+.guide-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 10px; padding: 1rem 1.25rem;
+  display: flex; align-items: center; gap: 1rem;
+  text-decoration: none; color: var(--white);
+  transition: all .2s; animation: fadeUp .5s ease both;
+  position: relative; overflow: hidden;
+}
+.guide-card:nth-child(1){animation-delay:.45s}
+.guide-card:nth-child(2){animation-delay:.5s}
+.guide-card:nth-child(3){animation-delay:.55s}
+.guide-card:hover { border-color: var(--border2); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,0,0,.3); }
+.guide-card.instructor-only:hover { border-color: rgba(240,180,41,.4); }
+.guide-card.instructor-only { border-left: 3px solid rgba(240,180,41,.4); }
+.guide-card.student-facing { border-left: 3px solid rgba(96,165,250,.4); }
+.guide-card.student-facing:hover { border-color: rgba(96,165,250,.4); }
+.guide-icon { font-size: 1.6rem; flex-shrink: 0; }
+.guide-title { font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: .04em; margin-bottom: .15rem; }
+.guide-sub { font-size: .75rem; color: var(--white2); font-weight: 300; }
+.guide-arrow { margin-left: auto; font-family: var(--mono); font-size: .7rem; color: var(--muted); flex-shrink: 0; }
+
+/* ── FOOTER ── */
+.footer {
+  position: relative; z-index: 1;
+  border-top: 1px solid var(--border);
+  padding: 1.25rem 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  max-width: 1280px; margin: 0 auto;
+}
+.footer-left { font-family: var(--mono); font-size: .65rem; color: var(--muted); }
+.footer-left strong { color: var(--teal); }
+.footer-right { font-family: var(--mono); font-size: .62rem; color: var(--muted); letter-spacing: .05em; }
+
+/* ── INSTRUCTOR BADGE (hidden tools) ── */
+.instr-only { display: none; }
+body.instructor-mode .instr-only { display: flex; }
+body.instructor-mode .guide-card.instructor-only { display: flex; }
+body:not(.instructor-mode) .guide-card.instructor-only { display: none; }
+
+/* ── MODAL (for instructor locked tools) ── */
+.modal-bg {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
+  display: none; align-items: center; justify-content: center;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 12px; padding: 2rem; max-width: 400px; width: 90%;
+  box-shadow: 0 24px 80px rgba(0,0,0,.5);
+  animation: fadeUp .2s ease;
+}
+.modal-title {
+  font-family: 'Rajdhani', sans-serif; font-size: 1.4rem; font-weight: 700;
+  color: var(--gold); letter-spacing: .06em; margin-bottom: .5rem;
+}
+.modal-sub { font-size: .82rem; color: var(--white2); line-height: 1.6; margin-bottom: 1.25rem; }
+.modal-inp {
+  font-family: var(--mono); font-size: .85rem;
+  width: 100%; padding: .6rem .85rem;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 6px; color: var(--white); outline: none;
+  transition: border-color .2s; margin-bottom: .75rem;
+}
+.modal-inp:focus { border-color: var(--gold); }
+.modal-btns { display: flex; gap: .5rem; justify-content: flex-end; }
+.mbtn {
+  font-family: 'Rajdhani', sans-serif; font-size: .85rem; font-weight: 700;
+  letter-spacing: .08em; padding: .45rem 1.1rem; border-radius: 5px;
+  cursor: pointer; border: none; transition: all .15s;
+}
+.mbtn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.mbtn-ghost:hover { color: var(--white); border-color: var(--border2); }
+.mbtn-gold { background: var(--gold); color: var(--bg); }
+.mbtn-gold:hover { background: #f5c84a; }
+.modal-err { font-family: var(--mono); font-size: .7rem; color: var(--red); margin-top: -.4rem; margin-bottom: .6rem; display: none; }
+</style>
+</head>
+<body>
+
+<!-- STATUS BAR -->
+<div class="statusbar">
+  <div class="sb-left">
+    <span class="sb-logo">HealthSim Hub</span>
+    <div class="sb-sep"></div>
+    <div class="sb-status">
+      <div class="sb-dot"></div>
+      <span>SYSTEM ONLINE</span>
+    </div>
+    <div class="sb-status" style="margin-left:.5rem">
+      <span>SESSION: ACTIVE</span>
+    </div>
+  </div>
+  <div class="sb-right">
+    <span class="sb-time" id="clock">--:-- --</span>
+    <span class="sb-badge student" id="role-badge">STUDENT</span>
+  </div>
+</div>
+
+<!-- ROLE BAR -->
+<div class="role-bar">
+  <span class="role-label">Role:</span>
+  <button class="role-btn active student" id="btn-student" onclick="setRole('student')">Student</button>
+  <button class="role-btn instructor"     id="btn-instr"   onclick="promptInstructor()">Instructor</button>
+  <span class="role-divider" id="role-info">Viewing as Student — instructor tools are hidden</span>
+</div>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow">HealthSim Hub</div>
+    <div class="hero-title">SimClinic <span>Desktop</span></div>
+    <div class="hero-sub">Your clinical workspace — select a tool to begin your shift</div>
+    <div class="hero-stats">
+      <div class="hs"><strong>11</strong>Pre-Set Patients</div>
+      <div class="hs"><strong id="stat-live">—</strong>Live Tools</div>
+      <div class="hs"><strong id="stat-soon">—</strong>Coming Soon</div>
+      <div class="hs"><strong id="stat-date">—</strong>Today</div>
+    </div>
+  </div>
+
+  <!-- CLINICAL TOOLS -->
+  <div class="section-label">Clinical Tools</div>
+  <div class="tool-grid">
+
+    <!-- EMR -->
+    <a class="tool-card" href="emr.html" target="_blank">
+      <div class="card-accent teal"></div>
+      <div class="card-inner">
+        <div class="card-top">
+          <div class="card-icon teal">🏥</div>
+          <div class="card-badges">
+            <span class="card-badge cb-live">● Live</span>
+            <span class="card-badge cb-both">Student + Instr</span>
+          </div>
+        </div>
+        <div class="card-title">ClinicalEMR Pro</div>
+        <div class="card-desc">Full electronic medical record simulation. Chart patients, enter vitals, write SOAP notes, place orders, process labs, and complete billing — all 11 patients pre-loaded.</div>
+      </div>
+      <div class="card-footer">
+        <div class="card-meta">
+          <div class="card-meta-dot green"></div>
+          <span>11 pre-set patients · add more anytime</span>
+        </div>
+        <span class="card-arrow">OPEN →</span>
+      </div>
+    </a>
+
+    <!-- GROWTH CHART -->
+    <a class="tool-card" href="emr.html" target="_blank">
+      <div class="card-accent green"></div>
+      <div class="card-inner">
+        <div class="card-top">
+          <div class="card-icon green">📈</div>
+          <div class="card-badges">
+            <span class="card-badge cb-live">● Live</span>
+            <span class="card-badge cb-both">Student + Instr</span>
+          </div>
+        </div>
+        <div class="card-title">CDC Growth Chart</div>
+        <div class="card-desc">Interactive pediatric growth chart tool. Plot height, weight, and BMI percentiles against CDC reference data. Accessible directly inside the EMR or as a standalone tool.</div>
+      </div>
+      <div class="card-footer">
+        <div class="card-meta">
+          <div class="card-meta-dot green"></div>
+          <span>Built into EMR · Ages 2–20</span>
+        </div>
+        <span class="card-arrow">OPEN →</span>
+      </div>
+    </a>
+
+    <!-- INSURANCE — COMING SOON -->
+    <div class="tool-card coming-soon">
+      <div class="cs-overlay"><div class="cs-tag">Coming Soon</div></div>
+      <div class="card-accent blue"></div>
+      <div class="card-inner">
+        <div class="card-top">
+          <div class="card-icon blue">🛡️</div>
+          <div class="card-badges">
+            <span class="card-badge cb-soon">In Development</span>
+          </div>
+        </div>
+        <div class="card-title">Insurance Verification</div>
+        <div class="card-desc">Verify patient insurance eligibility, check coverage details, confirm deductibles and copays, and document authorization for services before the visit.</div>
+      </div>
+      <div class="card-footer">
+        <div class="card-meta">
+          <div class="card-meta-dot muted"></div>
+          <span>Real-time eligibility simulation</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- BILLING — COMING SOON -->
+    <div class="tool-card coming-soon">
+      <div class="cs-overlay"><div class="cs-tag">Coming Soon</div></div>
+      <div class="card-accent gold"></div>
+      <div class="card-inner">
+        <div class="card-top">
+          <div class="card-icon gold">💳</div>
+          <div class="card-badges">
+            <span class="card-badge cb-soon">In Development</span>
+          </div>
+        </div>
+        <div class="card-title">Billing & Coding</div>
+        <div class="card-desc">Practice ICD-10 and CPT coding, submit claims, manage denials and appeals, reconcile charges, and process insurance payments through a full revenue cycle workflow.</div>
+      </div>
+      <div class="card-footer">
+        <div class="card-meta">
+          <div class="card-meta-dot muted"></div>
+          <span>Claims · Denials · Appeals</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUPPLY CHAIN — COMING SOON -->
+    <div class="tool-card coming-soon">
+      <div class="cs-overlay"><div class="cs-tag">Coming Soon</div></div>
+      <div class="card-accent purple"></div>
+      <div class="card-inner">
+        <div class="card-top">
+          <div class="card-icon purple">📦</div>
+          <div class="card-badges">
+            <span class="card-badge cb-soon">In Development</span>
+          </div>
+        </div>
+        <div class="card-title">Supply Chain & Inventory</div>
+        <div class="card-desc">Manage clinical supply inventory, document stock levels, process reorder requests, receive shipments, and track expiration dates for medications and supplies.</div>
+      </div>
+      <div class="card-footer">
+        <div class="card-meta">
+          <div class="card-meta-dot muted"></div>
+          <span>Stock · Reorder · Expiration tracking</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCHEDULING — COMING SOON -->
+    <div class="tool-card coming-soon">
+      <div class="cs-overlay"><div class="cs-tag">Coming Soon</div></div>
+      <div class="card-accent rose"></div>
+      <div class="card-inner">
+        <div class="card-top">
+          <div class="card-icon rose">📅</div>
+          <div class="card-badges">
+            <span class="card-badge cb-soon">In Development</span>
+          </div>
+        </div>
+        <div class="card-title">Scheduling & Phone Messages</div>
+        <div class="card-desc">Schedule patient appointments, manage the daily calendar, document phone messages, process refill requests, and route calls to the appropriate provider or staff.</div>
+      </div>
+      <div class="card-footer">
+        <div class="card-meta">
+          <div class="card-meta-dot muted"></div>
+          <span>Appointments · Messages · Routing</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- GUIDES -->
+  <div class="section-label">Reference Guides</div>
+  <div class="guide-strip">
+
+    <!-- Student Guide -->
+    <a class="guide-card student-facing" href="ClinicalEMR-Student-Guide.html" target="_blank">
+      <div class="guide-icon">📘</div>
+      <div>
+        <div class="guide-title">Student Guide</div>
+        <div class="guide-sub">How to use the EMR · Step-by-step workflow · Task reference</div>
+      </div>
+      <div class="card-badges" style="align-items:flex-end">
+        <span class="card-badge cb-live" style="margin-bottom:.3rem">● Live</span>
+        <span class="card-badge cb-student">Student</span>
+      </div>
+      <div class="guide-arrow">↗</div>
+    </a>
+
+    <!-- Skills Passport -->
+    <a class="guide-card student-facing" href="skills-passport.html" target="_blank">
+      <div class="guide-icon">🏅</div>
+      <div>
+        <div class="guide-title">Skills Passport</div>
+        <div class="guide-sub">Track badge progress · Skills check-off · Certification readiness</div>
+      </div>
+      <div class="card-badges" style="align-items:flex-end">
+        <span class="card-badge cb-live" style="margin-bottom:.3rem">● Live</span>
+        <span class="card-badge cb-student">Student</span>
+      </div>
+      <div class="guide-arrow">↗</div>
+    </a>
+
+    <!-- Instructor Guide — hidden until instructor mode -->
+    <a class="guide-card instructor-only" href="ClinicalEMR-Instructor-Guide.html" target="_blank">
+      <div class="guide-icon">📗</div>
+      <div>
+        <div class="guide-title">Instructor Guide</div>
+        <div class="guide-sub">Setup · Delivery options · Patient roster · Grading rubric</div>
+      </div>
+      <div class="card-badges" style="align-items:flex-end">
+        <span class="card-badge cb-live" style="margin-bottom:.3rem">● Live</span>
+        <span class="card-badge cb-instr">Instructor</span>
+      </div>
+      <div class="guide-arrow">↗</div>
+    </a>
+
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-left"><strong>HealthSim Hub</strong> · SimClinic Desktop · © 2025</div>
+  <div class="footer-right">All simulations are for educational purposes only</div>
+</footer>
+
+<!-- INSTRUCTOR MODAL -->
+<div class="modal-bg" id="instr-modal">
+  <div class="modal">
+    <div class="modal-title">🔒 Instructor Access</div>
+    <div class="modal-sub">Enter the instructor access code to reveal instructor-only tools and guides. Contact your department if you need the code.</div>
+    <input class="modal-inp" type="password" id="instr-code" placeholder="Enter access code" onkeydown="if(event.key==='Enter')checkCode()">
+    <div class="modal-err" id="instr-err">Incorrect code. Please try again.</div>
+    <div class="modal-btns">
+      <button class="mbtn mbtn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="mbtn mbtn-gold" onclick="checkCode()">Unlock →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CLOCK ──
+function updateClock(){
+  const now = new Date();
+  const t = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('clock').textContent = t;
+  document.getElementById('stat-date').textContent = now.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+updateClock(); setInterval(updateClock, 1000);
+
+// ── AUTO-COUNT LIVE / COMING SOON ──
+function updateStats(){
+  const live = document.querySelectorAll('.tool-card:not(.coming-soon)').length
+             + document.querySelectorAll('.guide-card:not(.instructor-only)').length;
+  const soon = document.querySelectorAll('.tool-card.coming-soon').length;
+  document.getElementById('stat-live').textContent = live;
+  document.getElementById('stat-soon').textContent = soon;
+}
+// Run after DOM settles so instructor-only visibility is accounted for
+document.addEventListener('DOMContentLoaded', updateStats);
+
+// ── ROLE ──
+const INSTR_CODE = 'hsh2025'; // Change this to whatever you want
+let _role = sessionStorage.getItem('hsh_role') || 'student';
+
+function setRole(role){
+  _role = role;
+  sessionStorage.setItem('hsh_role', role);
+  document.body.classList.toggle('instructor-mode', role==='instructor');
+
+  document.getElementById('btn-student').className = 'role-btn' + (role==='student'?' active student':'');
+  document.getElementById('btn-instr').className   = 'role-btn' + (role==='instructor'?' active instructor':'');
+
+  const badge = document.getElementById('role-badge');
+  badge.textContent = role==='instructor' ? 'INSTRUCTOR' : 'STUDENT';
+  badge.className = 'sb-badge ' + role;
+
+  document.getElementById('role-info').textContent = role==='instructor'
+    ? 'Viewing as Instructor — all tools and guides visible'
+    : 'Viewing as Student — instructor tools are hidden';
+
+  // recount after role change (instructor guide card appears/disappears)
+  updateStats();
+}
+
+function promptInstructor(){
+  if(_role==='instructor'){ setRole('student'); return; }
+  document.getElementById('instr-code').value='';
+  document.getElementById('instr-err').style.display='none';
+  document.getElementById('instr-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('instr-code').focus(),80);
+}
+
+function checkCode(){
+  const val = document.getElementById('instr-code').value.trim();
+  if(val === INSTR_CODE){
+    closeModal(); setRole('instructor');
+  } else {
+    document.getElementById('instr-err').style.display='block';
+    document.getElementById('instr-code').value='';
+    document.getElementById('instr-code').focus();
+  }
+}
+
+function closeModal(){
+  document.getElementById('instr-modal').classList.remove('open');
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape') closeModal();
+});
+document.getElementById('instr-modal').addEventListener('click', e=>{
+  if(e.target===document.getElementById('instr-modal')) closeModal();
+});
+
+// Apply saved role on load
+setRole(_role);
+</script>
+</body>
+</html>
