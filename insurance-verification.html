@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SimClinic — Insurance Verification</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --teal:      #0a7e74;
+  --teal2:     #0fb8a8;
+  --teal-dim:  #e6f7f6;
+  --teal-mid:  #b2e8e4;
+  --navy:      #0f2240;
+  --blue:      #2563eb;
+  --blue-dim:  #eff6ff;
+  --blue-mid:  #bfdbfe;
+  --gold:      #d97706;
+  --gold-dim:  #fffbeb;
+  --gold-mid:  #fde68a;
+  --red:       #dc2626;
+  --red-dim:   #fef2f2;
+  --red-mid:   #fecaca;
+  --green:     #16a34a;
+  --green-dim: #f0fdf4;
+  --green-mid: #bbf7d0;
+  --purple:    #7c3aed;
+  --purple-dim:#f5f3ff;
+  --purple-mid:#ddd6fe;
+  --orange:    #ea580c;
+  --orange-dim:#fff7ed;
+  --gray:      #6b7280;
+  --gray2:     #9ca3af;
+  --gray3:     #d1d5db;
+  --gray4:     #f3f4f6;
+  --gray5:     #f9fafb;
+  --white:     #ffffff;
+  --ink:       #111827;
+  --ink2:      #374151;
+  --ink3:      #6b7280;
+  --border:    #e5e7eb;
+  --border2:   #d1d5db;
+  --shadow:    0 1px 3px rgba(0,0,0,.08);
+  --shadow2:   0 4px 16px rgba(0,0,0,.1);
+  --shadow3:   0 8px 32px rgba(0,0,0,.12);
+  --rad:       10px;
+  --rad2:      14px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{height:100%;font-size:14px}
+body{font-family:'Inter',sans-serif;background:var(--gray5);color:var(--ink);min-height:100vh}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 1.5rem;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
+.tb-left{display:flex;align-items:center;gap:.75rem}
+.tb-back{display:flex;align-items:center;gap:.4rem;font-size:.8rem;font-weight:500;color:var(--gray);text-decoration:none;padding:.35rem .7rem;border-radius:6px;border:1px solid var(--border);transition:all .15s}
+.tb-back:hover{background:var(--gray4);color:var(--ink)}
+.tb-divider{width:1px;height:24px;background:var(--border)}
+.tb-title{display:flex;align-items:center;gap:.5rem;font-size:.95rem;font-weight:700;color:var(--navy)}
+.tb-icon{width:30px;height:30px;border-radius:7px;background:var(--blue-dim);display:flex;align-items:center;justify-content:center;font-size:.95rem}
+.tb-right{display:flex;align-items:center;gap:.75rem}
+.tb-clock{font-size:.78rem;font-weight:600;color:var(--teal);font-family:'JetBrains Mono',monospace}
+.status-dot{display:flex;align-items:center;gap:.35rem;font-size:.72rem;font-weight:600;color:var(--green)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:320px 1fr;gap:1rem;padding:1rem 1.5rem;max-width:1400px;margin:0 auto}
+
+/* ── PANEL ── */
+.panel{background:var(--white);border:1px solid var(--border);border-radius:var(--rad2);box-shadow:var(--shadow)}
+.panel-header{padding:.85rem 1.1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.panel-title{font-size:.85rem;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:.5rem}
+.panel-body{padding:1rem 1.1rem}
+
+/* ── WORKLIST ── */
+.worklist{display:flex;flex-direction:column;gap:.4rem;max-height:calc(100vh - 160px);overflow-y:auto}
+.wl-item{
+  padding:.65rem .85rem;border-radius:var(--rad);border:1px solid var(--border);
+  cursor:pointer;transition:all .15s;position:relative;
+}
+.wl-item:hover{border-color:var(--teal-mid);background:var(--teal-dim)}
+.wl-item.active{border-color:var(--teal);background:var(--teal-dim);box-shadow:0 0 0 2px rgba(10,126,116,.15)}
+.wl-item.verified{border-left:3px solid var(--green)}
+.wl-item.flagged{border-left:3px solid var(--red)}
+.wl-item.pending{border-left:3px solid var(--gray3)}
+.wl-name{font-size:.82rem;font-weight:700;color:var(--ink);margin-bottom:.15rem}
+.wl-meta{font-size:.7rem;color:var(--ink3);margin-bottom:.2rem}
+.wl-ins{font-size:.68rem;font-weight:600;padding:.1rem .4rem;border-radius:4px;display:inline-block}
+.wl-status{position:absolute;top:.65rem;right:.75rem;font-size:.65rem;font-weight:700;padding:.15rem .45rem;border-radius:4px}
+.ws-verified{background:var(--green-dim);color:var(--green)}
+.ws-flagged{background:var(--red-dim);color:var(--red)}
+.ws-pending{background:var(--gray4);color:var(--gray)}
+.ws-inprogress{background:var(--gold-dim);color:var(--gold)}
+
+/* insurance type colors */
+.ins-medicaid{background:#dcfce7;color:#166534}
+.ins-medicare{background:#dbeafe;color:#1e40af}
+.ins-commercial{background:#f3e8ff;color:#6b21a8}
+.ins-tricare{background:#fff7ed;color:#9a3412}
+.ins-selfpay{background:#f1f5f9;color:#475569}
+.ins-hmo{background:#fdf4ff;color:#86198f}
+.ins-dual{background:#e0f2fe;color:#075985}
+
+/* ── SEARCH BAR ── */
+.search-bar{display:flex;gap:.5rem;margin-bottom:.75rem}
+.search-inp{flex:1;font-family:'Inter',sans-serif;font-size:.82rem;padding:.45rem .7rem;border:1px solid var(--border2);border-radius:7px;outline:none;color:var(--ink);transition:border-color .15s}
+.search-inp:focus{border-color:var(--teal)}
+
+/* ── STATS ROW ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.65rem;margin-bottom:1rem}
+.stat-box{background:var(--white);border:1px solid var(--border);border-radius:var(--rad);padding:.65rem .75rem;text-align:center;box-shadow:var(--shadow)}
+.stat-num{font-size:1.4rem;font-weight:800;color:var(--navy);line-height:1}
+.stat-lbl{font-size:.62rem;font-weight:600;color:var(--gray);margin-top:.15rem;text-transform:uppercase;letter-spacing:.04em}
+
+/* ── VERIFICATION PANEL ── */
+.ver-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;color:var(--gray2);text-align:center;gap:.75rem}
+.ver-empty-icon{font-size:3rem}
+.ver-empty-text{font-size:.85rem;font-weight:500}
+
+.ver-content{display:flex;flex-direction:column;gap:1rem}
+
+/* patient header */
+.pt-header{
+  background:linear-gradient(135deg,var(--navy),var(--navy2));
+  border-radius:var(--rad);padding:1rem 1.25rem;color:var(--white);
+  display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;
+}
+.pt-name{font-size:1.1rem;font-weight:700;margin-bottom:.2rem}
+.pt-meta{font-size:.75rem;opacity:.8;line-height:1.7}
+.pt-appt{text-align:right;font-size:.75rem;opacity:.85;line-height:1.8}
+
+/* ins type badge */
+.ins-type-badge{
+  display:inline-flex;align-items:center;gap:.4rem;
+  font-size:.72rem;font-weight:700;padding:.3rem .75rem;
+  border-radius:99px;border:1px solid;margin-bottom:.25rem;
+}
+
+/* sections */
+.ver-section{border:1px solid var(--border);border-radius:var(--rad);overflow:hidden}
+.ver-section-head{
+  padding:.65rem 1rem;background:var(--gray5);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;user-select:none;
+}
+.ver-section-title{font-size:.8rem;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:.4rem}
+.ver-section-body{padding:.85rem 1rem}
+
+/* info grid */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem .75rem}
+.info-row{display:flex;flex-direction:column;gap:.15rem}
+.info-row.full{grid-column:1/-1}
+.info-label{font-size:.68rem;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.04em}
+.info-val{font-size:.82rem;font-weight:600;color:var(--ink);font-family:'JetBrains Mono',monospace}
+.info-val.large{font-size:1rem;font-weight:700;color:var(--navy)}
+
+/* deductible bar */
+.ded-bar-wrap{margin-top:.5rem}
+.ded-bar-labels{display:flex;justify-content:space-between;font-size:.7rem;color:var(--gray);margin-bottom:.25rem}
+.ded-bar-track{height:10px;background:var(--border);border-radius:99px;overflow:hidden}
+.ded-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--green),var(--teal2));transition:width .6s ease}
+
+/* flags */
+.flag-list{display:flex;flex-direction:column;gap:.4rem}
+.flag-item{
+  display:flex;align-items:flex-start;gap:.6rem;
+  padding:.6rem .75rem;border-radius:8px;font-size:.8rem;line-height:1.5;
+}
+.flag-item.warn{background:var(--gold-dim);border:1px solid var(--gold-mid);color:#92400e}
+.flag-item.error{background:var(--red-dim);border:1px solid var(--red-mid);color:#991b1b}
+.flag-item.info{background:var(--blue-dim);border:1px solid var(--blue-mid);color:#1e40af}
+.flag-item.ok{background:var(--green-dim);border:1px solid var(--green-mid);color:#166534}
+.flag-icon{font-size:1rem;flex-shrink:0;margin-top:.05rem}
+
+/* prior auth */
+.auth-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.auth-item{
+  padding:.6rem .75rem;border-radius:8px;border:1px solid var(--border);
+  font-size:.78rem;
+}
+.auth-item.required{background:var(--gold-dim);border-color:var(--gold-mid)}
+.auth-item.not-required{background:var(--green-dim);border-color:var(--green-mid)}
+.auth-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.2rem}
+.auth-required .auth-label{color:var(--gold)}
+.auth-not-required .auth-label{color:var(--green)}
+
+/* verification form */
+.ver-form{display:flex;flex-direction:column;gap:.65rem}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:.65rem}
+.form-group{display:flex;flex-direction:column;gap:.25rem}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:.7rem;font-weight:600;color:var(--ink2);text-transform:uppercase;letter-spacing:.04em}
+.form-inp,.form-sel,.form-ta{font-family:'Inter',sans-serif;font-size:.82rem;padding:.48rem .7rem;border:1px solid var(--border2);border-radius:7px;color:var(--ink);background:var(--white);outline:none;transition:border-color .15s;width:100%}
+.form-inp:focus,.form-sel:focus,.form-ta:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(10,126,116,.08)}
+.form-ta{resize:vertical;min-height:60px}
+
+/* hint / teaching callout */
+.hint-toggle{
+  display:inline-flex;align-items:center;gap:.3rem;
+  font-size:.72rem;font-weight:600;color:var(--blue);
+  background:var(--blue-dim);border:1px solid var(--blue-mid);
+  border-radius:99px;padding:.2rem .65rem;cursor:pointer;
+  transition:all .15s;user-select:none;
+}
+.hint-toggle:hover{background:#dbeafe}
+.hint-box{
+  background:var(--blue-dim);border:1px solid var(--blue-mid);
+  border-radius:var(--rad);padding:.85rem 1rem;
+  font-size:.8rem;color:#1e40af;line-height:1.7;
+  margin-top:.5rem;display:none;
+}
+.hint-box.open{display:block}
+.hint-box strong{color:var(--navy)}
+
+/* summary / print */
+.summary-box{
+  background:var(--gray5);border:1px solid var(--border);
+  border-radius:var(--rad);padding:1rem;font-size:.8rem;
+  line-height:1.8;color:var(--ink2);
+}
+.summary-box .sum-row{display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:.3rem 0}
+.summary-box .sum-row:last-child{border-bottom:none}
+.summary-box .sum-label{font-weight:600;color:var(--gray)}
+.summary-box .sum-val{color:var(--ink);text-align:right}
+
+/* buttons */
+.btn{font-family:'Inter',sans-serif;font-size:.8rem;font-weight:600;padding:.5rem 1rem;border-radius:7px;cursor:pointer;border:1px solid transparent;transition:all .15s;display:inline-flex;align-items:center;gap:.35rem}
+.btn-primary{background:var(--teal);color:var(--white);border-color:var(--teal)}
+.btn-primary:hover{background:var(--teal2)}
+.btn-secondary{background:var(--white);color:var(--ink2);border-color:var(--border2)}
+.btn-secondary:hover{background:var(--gray4)}
+.btn-danger{background:var(--white);color:var(--red);border-color:var(--red-mid)}
+.btn-danger:hover{background:var(--red-dim)}
+.btn-sm{font-size:.72rem;padding:.35rem .7rem}
+.btn-row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+
+/* toast */
+#toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--navy);color:var(--white);padding:.65rem 1.25rem;border-radius:8px;font-size:.82rem;font-weight:500;box-shadow:var(--shadow3);opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap}
+#toast.show{opacity:1}
+
+/* print */
+@media print{
+  .topbar,.worklist-panel,.btn,.hint-toggle,.hint-box,.ver-section-head .hint-toggle{display:none!important}
+  .layout{grid-template-columns:1fr!important}
+  body{background:white}
+}
+
+/* scrollbar */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--gray3);border-radius:99px}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-left">
+    <a class="tb-back" href="index.html">← Hub</a>
+    <div class="tb-divider"></div>
+    <div class="tb-title">
+      <div class="tb-icon">🛡️</div>
+      Insurance Verification
+    </div>
+  </div>
+  <div class="tb-right">
+    <div class="status-dot"><div class="dot"></div>System Online</div>
+    <div class="tb-divider"></div>
+    <span class="tb-clock" id="tb-clock">—</span>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- LEFT: WORKLIST -->
+  <div class="worklist-panel">
+    <div class="panel" style="height:calc(100vh - 80px);display:flex;flex-direction:column">
+      <div class="panel-header">
+        <div class="panel-title">📋 Today's Worklist</div>
+        <span id="wl-progress" style="font-size:.72rem;font-weight:700;color:var(--teal)">0 / 0 verified</span>
+      </div>
+      <div class="panel-body" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+        <div class="search-bar">
+          <input class="search-inp" id="search-inp" placeholder="Search patient or insurance…" oninput="filterWorklist()">
+        </div>
+        <div class="worklist" id="worklist"></div>
+        <div style="padding-top:.75rem;border-top:1px solid var(--border);margin-top:.75rem">
+          <div style="font-size:.72rem;font-weight:600;color:var(--gray);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.04em">All Patients</div>
+          <select class="form-sel" id="all-patients-sel" onchange="loadFromSelect(this.value)" style="font-size:.78rem">
+            <option value="">— Look up any patient —</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: VERIFICATION -->
+  <div>
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-num" id="st-total">0</div><div class="stat-lbl">On Schedule</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-verified" style="color:var(--green)">0</div><div class="stat-lbl">Verified</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-flagged" style="color:var(--red)">0</div><div class="stat-lbl">Flagged</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-pending" style="color:var(--gold)">0</div><div class="stat-lbl">Pending</div></div>
+    </div>
+
+    <!-- Verification Area -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title" id="ver-panel-title">🛡️ Insurance Verification</div>
+        <div class="btn-row" id="ver-panel-actions"></div>
+      </div>
+      <div class="panel-body" id="ver-panel-body">
+        <div class="ver-empty">
+          <div class="ver-empty-icon">🛡️</div>
+          <div class="ver-empty-text">Select a patient from the worklist<br>to begin insurance verification</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── DATA ──
+const PATIENTS = [
+  {id:'MRN00001',name:'Ethan Morales',    dob:'2020-06-12',gender:'Male',  phone:'(555) 234-5678',insurance:'Medicaid',                          insId:'MD112233',insType:'medicaid',  copay:0,   deductible:0,    deductibleMet:0,    provider:'Dr. Cohen', apptTime:'9:00 AM', apptType:'Well-Child'},
+  {id:'MRN00002',name:'Lily Chen',        dob:'2015-03-18',gender:'Female',phone:'(555) 987-6543',insurance:'Blue Cross Blue Shield PPO',         insId:'BC445566',insType:'commercial',copay:20,  deductible:1500, deductibleMet:200,  provider:'Dr. Cohen', apptTime:'3:30 PM', apptType:'Sick Visit'},
+  {id:'MRN00003',name:'Jamal Robinson',   dob:'2009-08-22',gender:'Male',  phone:'(555) 321-7654',insurance:'United Healthcare',                  insId:'UH778899',insType:'commercial',copay:30,  deductible:1000, deductibleMet:0,    provider:'Dr. Cohen', apptTime:'1:00 PM', apptType:'Sports Physical'},
+  {id:'MRN00004',name:'Sofia Martinez',   dob:'2002-11-05',gender:'Female',phone:'(555) 663-9921',insurance:'Aetna Student Health Plan',           insId:'AE998234',insType:'commercial',copay:10,  deductible:250,  deductibleMet:0,    provider:'Dr. Nguyen',apptTime:'11:00 AM',apptType:'Follow-Up'},
+  {id:'MRN00005',name:'Sarah Thompson',   dob:'1996-02-14',gender:'Female',phone:'(555) 443-2210',insurance:'Blue Cross Blue Shield',              insId:'BC991122',insType:'commercial',copay:25,  deductible:1000, deductibleMet:400,  provider:'Dr. Nguyen',apptTime:'2:00 PM', apptType:'Prenatal'},
+  {id:'MRN00006',name:'Michael Turner',   dob:'1990-07-09',gender:'Male',  phone:'(555) 338-1009',insurance:"Workers' Compensation",              insId:'WC332211',insType:'workerscomp',copay:0,  deductible:0,    deductibleMet:0,    provider:'Dr. Evans', apptTime:'—',       apptType:'—'},
+  {id:'MRN00007',name:'Angela Brooks',    dob:'1979-01-27',gender:'Female',phone:'(555) 201-4433',insurance:'Medicare Advantage',                  insId:'MA556677',insType:'medicare',  copay:15,  deductible:200,  deductibleMet:200,  provider:'Dr. Walsh', apptTime:'9:00 AM', apptType:'Follow-Up'},
+  {id:'MRN00008',name:'Robert King',      dob:'1966-04-11',gender:'Male',  phone:'(555) 112-9988',insurance:'United Healthcare',                   insId:'UH334455',insType:'commercial',copay:40,  deductible:2000, deductibleMet:1200, provider:'Dr. Evans', apptTime:'8:30 AM', apptType:'Follow-Up'},
+  {id:'MRN00009',name:'Carol White',      dob:'1957-09-30',gender:'Female',phone:'(555) 778-3322',insurance:'Medicare',                            insId:'MC667788',insType:'medicare',  copay:0,   deductible:1600, deductibleMet:1600, provider:'Dr. Evans', apptTime:'2:30 PM', apptType:'Follow-Up'},
+  {id:'MRN00010',name:'Harold Simmons',   dob:'1950-12-02',gender:'Male',  phone:'(555) 445-6677',insurance:'Medicare',                            insId:'MC223344',insType:'medicare',  copay:0,   deductible:1600, deductibleMet:800,  provider:'Dr. Lee',   apptTime:'11:30 AM',apptType:'Follow-Up'},
+  {id:'MRN00011',name:'Margaret Hill',    dob:'1942-05-19',gender:'Female',phone:'(555) 667-5544',insurance:'Medicare + Supplemental',             insId:'MC112233',insType:'medicare',  copay:0,   deductible:0,    deductibleMet:0,    provider:'Dr. Lee',   apptTime:'3:00 PM', apptType:'Follow-Up'},
+  {id:'MRN00012',name:'Destiny Washington',dob:'2008-09-14',gender:'Female',phone:'(555) 234-7890',insurance:'Medicaid',                          insId:'MD556677',insType:'medicaid',  copay:0,   deductible:0,    deductibleMet:0,    provider:'Dr. Nguyen',apptTime:'9:00 AM', apptType:'Follow-Up'},
+  {id:'MRN00013',name:'Marcus Webb',      dob:'1996-04-22',gender:'Male',  phone:'(555) 310-8821',insurance:'Self-Pay',                            insId:'SP000013',insType:'selfpay',   copay:0,   deductible:0,    deductibleMet:0,    provider:'Dr. Evans', apptTime:'1:30 PM', apptType:'Sick Visit'},
+  {id:'MRN00014',name:'Diana Reyes',      dob:'1986-07-30',gender:'Female',phone:'(555) 489-3301',insurance:'Cigna HMO',                           insId:'CG774411',insType:'hmo',       copay:30,  deductible:500,  deductibleMet:500,  provider:'Dr. Walsh', apptTime:'10:30 AM',apptType:'Follow-Up'},
+  {id:'MRN00015',name:'James Kowalski',   dob:'1972-11-08',gender:'Male',  phone:'(555) 771-4422',insurance:'Tricare Prime',                       insId:'TC889900',insType:'tricare',   copay:0,   deductible:0,    deductibleMet:0,    provider:'Dr. Evans', apptTime:'9:30 AM', apptType:'Pre-Op Clearance'},
+  {id:'MRN00016',name:'Evelyn Carter',    dob:'1953-03-17',gender:'Female',phone:'(555) 556-9934',insurance:'Medicare + Medicaid (Dual Eligible)', insId:'MC334455',insType:'dual',      copay:0,   deductible:0,    deductibleMet:0,    provider:'Dr. Lee',   apptTime:'10:00 AM',apptType:'Follow-Up'},
+];
+
+// Today's scheduled patients (those with an apptTime)
+const TODAY_IDS = PATIENTS.filter(p=>p.apptTime!=='—').map(p=>p.id);
+
+const INS_TYPES = {
+  medicaid:    {label:'Medicaid',                color:'ins-medicaid',  hint:`<strong>Medicaid</strong> is a joint federal/state program for low-income individuals. It has <strong>no copay or deductible</strong> in most cases. Coverage varies by state. Always verify the patient's Medicaid ID is active — coverage can change monthly. Medicaid typically pays last if other coverage exists.`},
+  medicare:    {label:'Medicare',                color:'ins-medicare',  hint:`<strong>Medicare</strong> is federal insurance for patients 65+ or those with qualifying disabilities. <strong>Part A</strong> covers hospital stays; <strong>Part B</strong> covers outpatient visits. The annual Part B deductible resets each January. Many Medicare patients carry a supplemental (Medigap) policy that covers the remaining balance.`},
+  commercial:  {label:'Commercial Insurance',   color:'ins-commercial', hint:`<strong>Commercial insurance</strong> (BCBS, United, Aetna, etc.) is employer-sponsored or individually purchased. Always verify the <strong>copay, deductible, and deductible met</strong> amounts — these change annually. Confirm the patient's plan is active and that your provider is <strong>in-network</strong>.`},
+  hmo:         {label:'HMO',                    color:'ins-hmo',        hint:`<strong>HMO (Health Maintenance Organization)</strong> plans require patients to use in-network providers and often need a <strong>PCP referral</strong> before seeing a specialist. Many services require <strong>prior authorization</strong> before the visit. Without auth, the claim may be denied.`},
+  tricare:     {label:'Tricare',                color:'ins-tricare',    hint:`<strong>Tricare</strong> is federal insurance for active duty military, retirees, and their dependents. <strong>Tricare Prime</strong> has no copay for most services. Tricare requires providers to be <strong>Tricare-authorized</strong>. Prior authorization is needed for many specialty visits and surgeries.`},
+  selfpay:     {label:'Self-Pay',               color:'ins-selfpay',    hint:`<strong>Self-Pay</strong> patients have no insurance. Front desk should discuss payment options upfront: <strong>sliding scale fees, payment plans, or financial assistance programs</strong>. Collect payment or arrange a plan at check-in. Document the financial conversation in the chart.`},
+  workerscomp: {label:"Workers' Comp",          color:'ins-tricare',    hint:`<strong>Workers' Compensation</strong> covers injuries that occur on the job. The employer's WC carrier — not the patient's personal insurance — pays. Billing goes to the <strong>WC carrier, not the patient</strong>. A case number and adjuster contact info are usually required.`},
+  dual:        {label:'Dual Eligible',          color:'ins-dual',       hint:`<strong>Dual Eligible</strong> patients qualify for both Medicare and Medicaid. <strong>Medicare pays first (primary)</strong>, Medicaid pays the remaining balance (secondary). The patient typically owes nothing out of pocket. Billing must document both policies and coordinate benefits correctly.`},
+};
+
+// Prior auth rules by insurance type + visit type
+function getPriorAuth(pt, apptType){
+  const rules = [];
+  if(pt.insType==='hmo'){
+    rules.push({service:'Specialist Referral',required:true,note:'PCP referral form required before any specialist visit'});
+    rules.push({service:'Controlled Substances',required:true,note:'Prior auth required for ongoing controlled substance prescriptions'});
+    rules.push({service:'Imaging (MRI/CT)',required:true,note:'Pre-authorization required — submit 3–5 business days in advance'});
+  }
+  if(pt.insType==='tricare'){
+    rules.push({service:'Elective Surgery',required:true,note:'Tricare requires prior auth for all non-emergency surgeries'});
+    rules.push({service:'Specialty Care',required:apptType!=='Follow-Up',note:'New specialty referrals require auth; established follow-ups typically do not'});
+    rules.push({service:'Lab / Imaging',required:false,note:'Routine labs and imaging generally covered without prior auth'});
+  }
+  if(pt.insType==='medicare'){
+    rules.push({service:'Home Health Services',required:true,note:'Medicare requires physician order and homebound status documentation'});
+    rules.push({service:'Durable Medical Equipment',required:true,note:'DME requires Certificate of Medical Necessity'});
+    rules.push({service:'Outpatient Office Visit',required:false,note:'Standard office visits do not require prior authorization'});
+  }
+  if(pt.insType==='commercial'){
+    rules.push({service:'Specialist Referral',required:false,note:'PPO plans generally do not require referrals'});
+    rules.push({service:'High-Cost Imaging',required:true,note:'MRI, CT, PET scans often require prior auth — check plan specifics'});
+    rules.push({service:'Surgery / Procedures',required:true,note:'Most elective procedures require auth — submit at least 5 business days prior'});
+  }
+  if(pt.insType==='medicaid'){
+    rules.push({service:'Specialist Referral',required:true,note:'Medicaid usually requires PCP referral for specialty care'});
+    rules.push({service:'Non-Emergency Transport',required:true,note:'Medical transport requires pre-approval'});
+    rules.push({service:'Preventive / Well Visit',required:false,note:'Preventive visits are generally covered without prior auth'});
+  }
+  if(pt.insType==='selfpay'){
+    rules.push({service:'All Services',required:false,note:'No insurance to authorize — discuss payment plan and collect at time of service'});
+  }
+  if(pt.insType==='workerscomp'){
+    rules.push({service:'All Treatment',required:true,note:'WC carrier must authorize all treatment — get case number and adjuster contact'});
+  }
+  if(pt.insType==='dual'){
+    rules.push({service:'Medicare-covered services',required:false,note:'Medicare primary — most services authorized under Part B'});
+    rules.push({service:'Medicaid wrap-around',required:true,note:'Medicaid secondary must verify remaining balance coverage separately'});
+  }
+  return rules;
+}
+
+function getFlags(pt){
+  const flags = [];
+  const dedPct = pt.deductible > 0 ? (pt.deductibleMet / pt.deductible) * 100 : 100;
+
+  if(pt.insType==='selfpay') flags.push({type:'warn',icon:'💵',text:'Self-pay patient — collect payment or set up payment plan at check-in. Do not send to provider without financial discussion.'});
+  if(pt.insType==='hmo')     flags.push({type:'warn',icon:'📋',text:'HMO plan — verify PCP referral is on file before the visit. Services without referral may be denied.'});
+  if(pt.insType==='dual')    flags.push({type:'info',icon:'ℹ️',text:'Dual eligible — bill Medicare primary, Medicaid secondary. Patient owes nothing. Document coordination of benefits.'});
+  if(pt.insType==='tricare') flags.push({type:'info',icon:'🎖️',text:'Tricare Prime — confirm provider is Tricare-authorized. Check prior auth status for today\'s visit type.'});
+  if(pt.insType==='workerscomp') flags.push({type:'warn',icon:'⚠️',text:"Workers' Comp — do NOT bill patient's personal insurance. Obtain WC case number and adjuster contact before visit."});
+  if(pt.id==='MRN00015')    flags.push({type:'error',icon:'🚨',text:'CRITICAL ALLERGY: Iodine/Contrast Dye — Anaphylaxis. Surgical team must be notified. Document in all pre-op paperwork.'});
+  if(dedPct < 100 && pt.deductible > 0 && pt.deductibleMet === 0) flags.push({type:'warn',icon:'💰',text:`Deductible not met — patient owes first $${pt.deductible.toFixed(2)} of covered services out of pocket before insurance pays.`});
+  if(dedPct >= 100 && pt.deductible > 0) flags.push({type:'ok',icon:'✓',text:'Annual deductible fully met — insurance will pay per plan benefits with no additional deductible applied.'});
+  if(pt.id==='MRN00014') flags.push({type:'warn',icon:'📋',text:'Cigna HMO: Prior authorization pending for Lorazepam refill. Do not dispense until auth is confirmed.'});
+  if(pt.id==='MRN00016') flags.push({type:'info',icon:'ℹ️',text:'Dual eligible with CHF + T2DM — complex billing. Verify Medicaid home health aide authorization is still active.'});
+  if(pt.insType==='medicare' && pt.insurance.includes('Supplemental')) flags.push({type:'ok',icon:'✓',text:'Supplemental (Medigap) policy on file — will cover Medicare cost-sharing. Patient balance likely $0.'});
+
+  return flags;
+}
+
+// ── STATE ──
+let _verifications = JSON.parse(localStorage.getItem('ins_ver') || '{}');
+let _currentId     = null;
+let _hints         = {};
+
+function saveVer(){ localStorage.setItem('ins_ver', JSON.stringify(_verifications)); }
+
+// ── CLOCK ──
+function updateClock(){ document.getElementById('tb-clock').textContent = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+updateClock(); setInterval(updateClock, 1000);
+
+// ── WORKLIST ──
+function buildWorklist(){
+  const sel = document.getElementById('all-patients-sel');
+  sel.innerHTML = '<option value="">— Look up any patient —</option>';
+  PATIENTS.forEach(p=>{ const o=document.createElement('option'); o.value=p.id; o.text=`${p.name} (${p.id})`; sel.appendChild(o); });
+}
+
+function getWLStatus(id){
+  const v = _verifications[id];
+  if(!v) return 'pending';
+  return v.status;
+}
+
+function renderWorklist(filter=''){
+  const wl  = document.getElementById('worklist');
+  const pts = PATIENTS.filter(p=>TODAY_IDS.includes(p.id));
+  const filtered = filter ? pts.filter(p=>p.name.toLowerCase().includes(filter.toLowerCase())||p.insurance.toLowerCase().includes(filter.toLowerCase())) : pts;
+
+  const verified = pts.filter(p=>getWLStatus(p.id)==='verified').length;
+  document.getElementById('wl-progress').textContent = `${verified} / ${pts.length} verified`;
+
+  wl.innerHTML = filtered.map(p=>{
+    const status  = getWLStatus(p.id);
+    const insT    = INS_TYPES[p.insType];
+    const statusLabel = status==='verified'?'Verified':status==='flagged'?'Flagged':'Pending';
+    return `<div class="wl-item ${status}${_currentId===p.id?' active':''}" onclick="loadPatient('${p.id}')">
+      <span class="wl-status ws-${status}">${statusLabel}</span>
+      <div class="wl-name">${p.name}</div>
+      <div class="wl-meta">${p.apptTime} · ${p.apptType} · ${p.provider}</div>
+      <span class="wl-ins ${insT.color}">${insT.label}</span>
+    </div>`;
+  }).join('');
+
+  updateStats(pts);
+}
+
+function updateStats(pts){
+  if(!pts) pts = PATIENTS.filter(p=>TODAY_IDS.includes(p.id));
+  document.getElementById('st-total').textContent    = pts.length;
+  document.getElementById('st-verified').textContent = pts.filter(p=>getWLStatus(p.id)==='verified').length;
+  document.getElementById('st-flagged').textContent  = pts.filter(p=>getWLStatus(p.id)==='flagged').length;
+  document.getElementById('st-pending').textContent  = pts.filter(p=>getWLStatus(p.id)==='pending'||getWLStatus(p.id)==='inprogress').length;
+}
+
+function filterWorklist(){ renderWorklist(document.getElementById('search-inp').value); }
+function loadFromSelect(id){ if(id) loadPatient(id); }
+
+// ── LOAD PATIENT ──
+function loadPatient(id){
+  _currentId = id;
+  const pt   = PATIENTS.find(p=>p.id===id);
+  if(!pt) return;
+  renderWorklist(document.getElementById('search-inp').value);
+
+  const ver   = _verifications[id] || {};
+  const insT  = INS_TYPES[pt.insType];
+  const flags = getFlags(pt);
+  const auths = getPriorAuth(pt, pt.apptType);
+  const dedPct= pt.deductible > 0 ? Math.min(100, Math.round((pt.deductibleMet/pt.deductible)*100)) : 100;
+  const age   = calcAge(pt.dob);
+
+  document.getElementById('ver-panel-title').textContent = `🛡️ ${pt.name}`;
+  document.getElementById('ver-panel-actions').innerHTML = `
+    <button class="btn btn-sm btn-secondary" onclick="printSummary()">🖨 Print Summary</button>
+  `;
+
+  document.getElementById('ver-panel-body').innerHTML = `
+    <div class="ver-content">
+
+      <!-- Patient Header -->
+      <div class="pt-header">
+        <div>
+          <div class="pt-name">${pt.name}</div>
+          <div class="pt-meta">
+            DOB: ${formatDOB(pt.dob)} &nbsp;·&nbsp; Age: ${age}<br>
+            ${pt.gender} &nbsp;·&nbsp; ${pt.phone}<br>
+            MRN: ${pt.id}
+          </div>
+        </div>
+        <div class="pt-appt">
+          <div style="font-size:.7rem;opacity:.7;margin-bottom:.15rem">TODAY'S APPOINTMENT</div>
+          <div style="font-weight:700">${pt.apptTime}</div>
+          <div>${pt.apptType}</div>
+          <div>${pt.provider}</div>
+        </div>
+      </div>
+
+      <!-- Flags -->
+      ${flags.length ? `
+      <div class="ver-section">
+        <div class="ver-section-head" onclick="toggleSection('flags')">
+          <div class="ver-section-title">⚑ Flags & Alerts <span style="background:var(--red);color:#fff;font-size:.6rem;padding:.1rem .4rem;border-radius:99px;margin-left:.3rem">${flags.length}</span></div>
+          <span id="flags-arrow" style="color:var(--gray);font-size:.75rem">▼</span>
+        </div>
+        <div class="ver-section-body" id="flags-body">
+          <div class="flag-list">
+            ${flags.map(f=>`<div class="flag-item ${f.type}"><span class="flag-icon">${f.icon}</span><span>${f.text}</span></div>`).join('')}
+          </div>
+        </div>
+      </div>` : ''}
+
+      <!-- Insurance Info -->
+      <div class="ver-section">
+        <div class="ver-section-head" onclick="toggleSection('ins')">
+          <div class="ver-section-title">
+            🛡️ Insurance Information
+            <span class="hint-toggle" onclick="event.stopPropagation();toggleHint('ins-hint')" style="margin-left:.5rem">💡 What is ${insT.label}?</span>
+          </div>
+          <span id="ins-arrow" style="color:var(--gray);font-size:.75rem">▼</span>
+        </div>
+        <div class="ver-section-body" id="ins-body">
+          <div class="hint-box" id="ins-hint">${insT.hint}</div>
+          <div style="margin-bottom:.85rem">
+            <span class="ins-type-badge ${insT.color}" style="border-color:currentColor">${insT.label}</span>
+          </div>
+          <div class="info-grid">
+            <div class="info-row"><div class="info-label">Insurance Plan</div><div class="info-val">${pt.insurance}</div></div>
+            <div class="info-row"><div class="info-label">Member ID</div><div class="info-val">${pt.insId}</div></div>
+            <div class="info-row"><div class="info-label">Copay</div><div class="info-val large">${pt.copay > 0 ? '$'+pt.copay.toFixed(2) : 'None'}</div></div>
+            <div class="info-row"><div class="info-label">Annual Deductible</div><div class="info-val large">${pt.deductible > 0 ? '$'+pt.deductible.toFixed(2) : 'None'}</div></div>
+            ${pt.deductible > 0 ? `
+            <div class="info-row full">
+              <div class="info-label">Deductible Met</div>
+              <div class="ded-bar-wrap">
+                <div class="ded-bar-labels"><span>$${pt.deductibleMet.toFixed(2)} met</span><span>$${pt.deductible.toFixed(2)} total</span></div>
+                <div class="ded-bar-track"><div class="ded-bar-fill" style="width:${dedPct}%"></div></div>
+                <div style="font-size:.7rem;color:var(--gray);margin-top:.2rem">${dedPct}% met — $${(pt.deductible-pt.deductibleMet).toFixed(2)} remaining</div>
+              </div>
+            </div>` : ''}
+          </div>
+        </div>
+      </div>
+
+      <!-- Prior Authorization -->
+      <div class="ver-section">
+        <div class="ver-section-head" onclick="toggleSection('auth')">
+          <div class="ver-section-title">📋 Prior Authorization Requirements</div>
+          <span id="auth-arrow" style="color:var(--gray);font-size:.75rem">▼</span>
+        </div>
+        <div class="ver-section-body" id="auth-body">
+          <div class="auth-grid">
+            ${auths.map(a=>`
+              <div class="auth-item ${a.required?'required':'not-required'}">
+                <div class="auth-label" style="color:${a.required?'var(--gold)':'var(--green)'}">${a.required?'⚠ Required':'✓ Not Required'}</div>
+                <div style="font-size:.78rem;font-weight:700;color:var(--ink);margin-bottom:.15rem">${a.service}</div>
+                <div style="font-size:.72rem;color:var(--ink3);line-height:1.5">${a.note}</div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- Verification Form -->
+      <div class="ver-section">
+        <div class="ver-section-head" onclick="toggleSection('form')">
+          <div class="ver-section-title">✏️ Verification Checklist & Documentation</div>
+          <span id="form-arrow" style="color:var(--gray);font-size:.75rem">▼</span>
+        </div>
+        <div class="ver-section-body" id="form-body">
+          <div class="ver-form">
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">Verified By</label>
+                <input class="form-inp" id="vf-verifier" placeholder="Your name" value="${ver.verifier||''}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Verification Method</label>
+                <select class="form-sel" id="vf-method">
+                  <option value="">— Select —</option>
+                  <option ${ver.method==='Phone — Insurance Company'?'selected':''}>Phone — Insurance Company</option>
+                  <option ${ver.method==='Online Eligibility Portal'?'selected':''}>Online Eligibility Portal</option>
+                  <option ${ver.method==='EMR / Insurance on File'?'selected':''}>EMR / Insurance on File</option>
+                  <option ${ver.method==='Eligibility Fax'?'selected':''}>Eligibility Fax</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Coverage Status</label>
+                <select class="form-sel" id="vf-coverage">
+                  <option value="">— Select —</option>
+                  <option ${ver.coverage==='Active'?'selected':''}>Active</option>
+                  <option ${ver.coverage==='Inactive / Terminated'?'selected':''}>Inactive / Terminated</option>
+                  <option ${ver.coverage==='Pending Renewal'?'selected':''}>Pending Renewal</option>
+                  <option ${ver.coverage==='Unable to Verify'?'selected':''}>Unable to Verify</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Referral on File?</label>
+                <select class="form-sel" id="vf-referral">
+                  <option value="">— Select —</option>
+                  <option ${ver.referral==='Yes'?'selected':''}>Yes</option>
+                  <option ${ver.referral==='No — Needed'?'selected':''}>No — Needed</option>
+                  <option ${ver.referral==='N/A'?'selected':''}>N/A</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Notes / Issues Found</label>
+              <textarea class="form-ta" id="vf-notes" placeholder="Document anything that needs follow-up, issues found during verification, phone rep name if called, etc.">${ver.notes||''}</textarea>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-primary" onclick="saveVerification('verified')">✓ Mark Verified</button>
+              <button class="btn btn-danger" onclick="saveVerification('flagged')">⚑ Flag — Issue Found</button>
+              <button class="btn btn-secondary btn-sm" onclick="saveVerification('inprogress')">⏳ Save In Progress</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Verification Summary -->
+      ${ver.status ? `
+      <div class="ver-section" id="summary-section">
+        <div class="ver-section-head" onclick="toggleSection('summary')">
+          <div class="ver-section-title">📄 Verification Summary</div>
+          <span id="summary-arrow" style="color:var(--gray);font-size:.75rem">▼</span>
+        </div>
+        <div class="ver-section-body" id="summary-body">
+          <div class="summary-box" id="summary-content">
+            ${buildSummaryHTML(pt, ver)}
+          </div>
+          <div class="btn-row" style="margin-top:.75rem">
+            <button class="btn btn-secondary btn-sm" onclick="printSummary()">🖨 Print / Save Summary</button>
+          </div>
+        </div>
+      </div>` : ''}
+
+    </div>`;
+}
+
+function buildSummaryHTML(pt, ver){
+  const insT = INS_TYPES[pt.insType];
+  const ts   = ver.timestamp ? new Date(ver.timestamp).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+  return `
+    <div class="sum-row"><span class="sum-label">Patient</span><span class="sum-val">${pt.name} (${pt.id})</span></div>
+    <div class="sum-row"><span class="sum-label">Insurance</span><span class="sum-val">${pt.insurance}</span></div>
+    <div class="sum-row"><span class="sum-label">Insurance Type</span><span class="sum-val">${insT.label}</span></div>
+    <div class="sum-row"><span class="sum-label">Member ID</span><span class="sum-val">${pt.insId}</span></div>
+    <div class="sum-row"><span class="sum-label">Coverage Status</span><span class="sum-val">${ver.coverage||'—'}</span></div>
+    <div class="sum-row"><span class="sum-label">Copay</span><span class="sum-val">${pt.copay>0?'$'+pt.copay.toFixed(2):'None'}</span></div>
+    <div class="sum-row"><span class="sum-label">Deductible</span><span class="sum-val">${pt.deductible>0?'$'+pt.deductibleMet.toFixed(2)+' / $'+pt.deductible.toFixed(2)+' met':'N/A'}</span></div>
+    <div class="sum-row"><span class="sum-label">Referral on File</span><span class="sum-val">${ver.referral||'—'}</span></div>
+    <div class="sum-row"><span class="sum-label">Verification Method</span><span class="sum-val">${ver.method||'—'}</span></div>
+    <div class="sum-row"><span class="sum-label">Verified By</span><span class="sum-val">${ver.verifier||'—'}</span></div>
+    <div class="sum-row"><span class="sum-label">Timestamp</span><span class="sum-val">${ts}</span></div>
+    <div class="sum-row"><span class="sum-label">Status</span><span class="sum-val" style="font-weight:700;color:${ver.status==='verified'?'var(--green)':ver.status==='flagged'?'var(--red)':'var(--gold)'}">${ver.status.replace('-',' ').replace(/\b\w/g,c=>c.toUpperCase())}</span></div>
+    ${ver.notes?`<div class="sum-row"><span class="sum-label">Notes</span><span class="sum-val" style="max-width:260px;text-align:right">${ver.notes}</span></div>`:''}
+  `;
+}
+
+function saveVerification(status){
+  const verifier = document.getElementById('vf-verifier').value.trim();
+  const method   = document.getElementById('vf-method').value;
+  const coverage = document.getElementById('vf-coverage').value;
+  const referral = document.getElementById('vf-referral').value;
+  const notes    = document.getElementById('vf-notes').value.trim();
+
+  if(status==='verified' && (!verifier||!method||!coverage)){
+    toast('⚠ Please fill in Verified By, Method, and Coverage Status before marking verified.'); return;
+  }
+
+  _verifications[_currentId] = { status, verifier, method, coverage, referral, notes, timestamp: Date.now() };
+  saveVer();
+  loadPatient(_currentId);
+  renderWorklist(document.getElementById('search-inp').value);
+  const msgs = {verified:'✓ Verification complete and saved', flagged:'⚑ Patient flagged — issue documented', inprogress:'⏳ Progress saved'};
+  toast(msgs[status]);
+}
+
+function printSummary(){
+  window.print();
+}
+
+// ── SECTION TOGGLE ──
+function toggleSection(id){
+  const body  = document.getElementById(id+'-body');
+  const arrow = document.getElementById(id+'-arrow');
+  if(!body) return;
+  const open = body.style.display==='none';
+  body.style.display = open ? '' : 'none';
+  if(arrow) arrow.textContent = open ? '▼' : '▶';
+}
+
+function toggleHint(id){
+  const box = document.getElementById(id);
+  if(box) box.classList.toggle('open');
+}
+
+// ── UTILS ──
+function calcAge(dob){ const b=new Date(dob),n=new Date(); let a=n.getFullYear()-b.getFullYear(); if(n<new Date(n.getFullYear(),b.getMonth(),b.getDate())) a--; return a; }
+function formatDOB(dob){ return new Date(dob+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}); }
+
+let _tt;
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(_tt); _tt=setTimeout(()=>t.classList.remove('show'),3200); }
+
+// ── INIT ──
+buildWorklist();
+renderWorklist();
+</script>
+</body>
+</html>

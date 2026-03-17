@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SimClinic — Scheduling & Phone Messages</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --teal:      #0a7e74;
+  --teal2:     #0fb8a8;
+  --teal-dim:  #e6f7f6;
+  --teal-mid:  #b2e8e4;
+  --navy:      #0f2240;
+  --navy2:     #1a3a5c;
+  --blue:      #2563eb;
+  --blue-dim:  #eff6ff;
+  --gold:      #d97706;
+  --gold-dim:  #fffbeb;
+  --gold-mid:  #fde68a;
+  --red:       #dc2626;
+  --red-dim:   #fef2f2;
+  --red-mid:   #fecaca;
+  --green:     #16a34a;
+  --green-dim: #f0fdf4;
+  --green-mid: #bbf7d0;
+  --purple:    #7c3aed;
+  --purple-dim:#f5f3ff;
+  --gray:      #6b7280;
+  --gray2:     #9ca3af;
+  --gray3:     #d1d5db;
+  --gray4:     #f3f4f6;
+  --gray5:     #f9fafb;
+  --white:     #ffffff;
+  --ink:       #111827;
+  --ink2:      #374151;
+  --ink3:      #6b7280;
+  --border:    #e5e7eb;
+  --border2:   #d1d5db;
+  --shadow:    0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+  --shadow2:   0 4px 16px rgba(0,0,0,.1);
+  --shadow3:   0 8px 32px rgba(0,0,0,.12);
+  --rad:       10px;
+  --rad2:      14px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{height:100%;font-size:14px}
+body{font-family:'Inter',sans-serif;background:var(--gray5);color:var(--ink);min-height:100vh}
+
+/* ── TOPBAR ── */
+.topbar{
+  background:var(--white);border-bottom:1px solid var(--border);
+  padding:0 1.5rem;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;box-shadow:var(--shadow);
+}
+.tb-left{display:flex;align-items:center;gap:.75rem}
+.tb-back{
+  display:flex;align-items:center;gap:.4rem;
+  font-size:.8rem;font-weight:500;color:var(--gray);
+  text-decoration:none;padding:.35rem .7rem;border-radius:6px;
+  border:1px solid var(--border);transition:all .15s;
+}
+.tb-back:hover{background:var(--gray4);color:var(--ink)}
+.tb-divider{width:1px;height:24px;background:var(--border)}
+.tb-title{
+  display:flex;align-items:center;gap:.5rem;
+  font-size:.95rem;font-weight:700;color:var(--navy);
+}
+.tb-icon{
+  width:30px;height:30px;border-radius:7px;
+  background:var(--teal-dim);display:flex;align-items:center;
+  justify-content:center;font-size:.95rem;
+}
+.tb-right{display:flex;align-items:center;gap:.75rem}
+.tb-date{font-size:.78rem;font-weight:500;color:var(--gray);font-family:'JetBrains Mono',monospace}
+.tb-clock{font-size:.78rem;font-weight:600;color:var(--teal);font-family:'JetBrains Mono',monospace}
+.status-dot{
+  display:flex;align-items:center;gap:.35rem;
+  font-size:.72rem;font-weight:600;color:var(--green);
+}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:1fr 360px;gap:1rem;padding:1rem 1.5rem;max-width:1400px;margin:0 auto}
+
+/* ── PANEL ── */
+.panel{background:var(--white);border:1px solid var(--border);border-radius:var(--rad2);box-shadow:var(--shadow)}
+.panel-header{
+  padding:.85rem 1.1rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.panel-title{font-size:.85rem;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:.5rem}
+.panel-body{padding:1rem 1.1rem}
+
+/* ── SCHEDULE CONTROLS ── */
+.sched-controls{
+  display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;
+  flex-wrap:wrap;
+}
+.date-nav{display:flex;align-items:center;gap:.4rem}
+.date-btn{
+  width:30px;height:30px;border-radius:6px;border:1px solid var(--border);
+  background:var(--white);cursor:pointer;font-size:.9rem;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;color:var(--gray);
+}
+.date-btn:hover{background:var(--gray4);border-color:var(--border2)}
+.date-display{
+  font-size:.85rem;font-weight:600;color:var(--navy);
+  padding:.3rem .75rem;background:var(--gray5);
+  border:1px solid var(--border);border-radius:6px;
+  white-space:nowrap;
+}
+.provider-tabs{display:flex;gap:.35rem;flex-wrap:wrap;flex:1}
+.prov-tab{
+  padding:.3rem .75rem;border-radius:6px;border:1px solid var(--border);
+  font-size:.75rem;font-weight:600;cursor:pointer;transition:all .15s;
+  background:var(--white);color:var(--gray);white-space:nowrap;
+}
+.prov-tab.active{color:var(--white);border-color:transparent}
+.prov-tab:nth-child(1).active{background:var(--teal)}
+.prov-tab:nth-child(2).active{background:var(--blue)}
+.prov-tab:nth-child(3).active{background:var(--purple)}
+.prov-tab:nth-child(4).active{background:var(--gold)}
+.prov-tab:nth-child(5).active{background:var(--red)}
+.prov-tab.all.active{background:var(--navy)}
+.prov-tab:hover:not(.active){background:var(--gray4)}
+
+/* ── TIME GRID ── */
+.time-grid{border:1px solid var(--border);border-radius:var(--rad);overflow:hidden}
+.tg-header{
+  display:grid;grid-template-columns:70px 1fr;
+  background:var(--gray4);border-bottom:1px solid var(--border);
+  padding:.5rem .75rem;
+}
+.tg-header-time{font-size:.72rem;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.05em}
+.tg-header-appt{font-size:.72rem;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.05em}
+.tg-row{
+  display:grid;grid-template-columns:70px 1fr;
+  border-bottom:1px solid var(--border);min-height:52px;
+  transition:background .1s;
+}
+.tg-row:last-child{border-bottom:none}
+.tg-row.hour-start{background:var(--gray5)}
+.tg-row:hover{background:#f8fffe}
+.tg-time{
+  padding:.5rem .75rem;font-size:.72rem;font-weight:600;
+  color:var(--gray);font-family:'JetBrains Mono',monospace;
+  border-right:1px solid var(--border);display:flex;align-items:flex-start;
+  padding-top:.65rem;
+}
+.tg-time.hour{color:var(--navy);font-weight:700}
+.tg-slot{padding:.35rem .6rem;display:flex;align-items:center;gap:.5rem;cursor:pointer;position:relative}
+.tg-slot:hover .slot-add{opacity:1}
+.slot-add{
+  opacity:0;font-size:.7rem;color:var(--teal2);font-weight:600;
+  transition:opacity .15s;
+}
+
+/* ── APPOINTMENT CHIP ── */
+.appt-chip{
+  display:flex;align-items:center;gap:.5rem;
+  padding:.4rem .7rem;border-radius:7px;
+  border-left:3px solid;cursor:pointer;
+  transition:all .15s;flex:1;max-width:100%;
+  position:relative;
+}
+.appt-chip:hover{filter:brightness(.97);box-shadow:var(--shadow)}
+.appt-name{font-size:.8rem;font-weight:700;color:var(--ink);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appt-type{font-size:.7rem;color:var(--ink3);white-space:nowrap}
+.appt-ins{font-size:.65rem;font-weight:600;padding:.1rem .4rem;border-radius:4px;white-space:nowrap}
+.appt-status{font-size:.65rem;font-weight:700;padding:.15rem .45rem;border-radius:4px;white-space:nowrap}
+.status-scheduled{background:var(--blue-dim);color:var(--blue)}
+.status-checked-in{background:var(--green-dim);color:var(--green)}
+.status-cancelled{background:var(--red-dim);color:var(--red);text-decoration:line-through}
+.status-no-show{background:var(--gold-dim);color:var(--gold)}
+.status-completed{background:var(--gray4);color:var(--gray)}
+
+/* provider colors */
+.prov-evans  {border-color:var(--teal);  background:#f0fdfc}
+.prov-walsh  {border-color:var(--blue);  background:#eff6ff}
+.prov-nguyen {border-color:var(--purple);background:#f5f3ff}
+.prov-lee    {border-color:var(--gold);  background:#fffbeb}
+.prov-cohen  {border-color:var(--red);   background:#fef2f2}
+
+/* ── RIGHT COLUMN ── */
+.right-col{display:flex;flex-direction:column;gap:1rem}
+
+/* ── STATS BAR ── */
+.stats-bar{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;
+}
+.stat-box{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--rad);padding:.65rem .75rem;text-align:center;
+  box-shadow:var(--shadow);
+}
+.stat-num{font-size:1.4rem;font-weight:800;color:var(--navy);line-height:1}
+.stat-lbl{font-size:.65rem;font-weight:600;color:var(--gray);margin-top:.2rem;text-transform:uppercase;letter-spacing:.04em}
+
+/* ── PHONE MESSAGES ── */
+.msg-list{display:flex;flex-direction:column;gap:.6rem;max-height:340px;overflow-y:auto}
+.msg-card{
+  border:1px solid var(--border);border-radius:var(--rad);
+  padding:.75rem;transition:all .15s;
+}
+.msg-card.urgent{border-left:3px solid var(--red);background:var(--red-dim)}
+.msg-card.routine{border-left:3px solid var(--teal);background:var(--teal-dim)}
+.msg-card.refill{border-left:3px solid var(--gold);background:var(--gold-dim)}
+.msg-card.resolved{opacity:.55;background:var(--gray5)}
+.msg-top{display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;margin-bottom:.3rem}
+.msg-caller{font-size:.82rem;font-weight:700;color:var(--ink)}
+.msg-time{font-size:.68rem;font-weight:500;color:var(--gray);font-family:'JetBrains Mono',monospace;white-space:nowrap}
+.msg-body{font-size:.78rem;color:var(--ink2);line-height:1.5;margin-bottom:.5rem}
+.msg-route{font-size:.7rem;font-weight:600;color:var(--gray);margin-bottom:.4rem}
+.msg-route span{color:var(--teal);font-weight:700}
+.msg-actions{display:flex;gap:.4rem;flex-wrap:wrap}
+.msg-btn{
+  font-size:.7rem;font-weight:600;padding:.25rem .6rem;border-radius:5px;
+  border:1px solid var(--border);background:var(--white);
+  cursor:pointer;transition:all .15s;color:var(--ink2);
+}
+.msg-btn:hover{background:var(--gray4)}
+.msg-btn.resolve{color:var(--green);border-color:var(--green-mid)}
+.msg-btn.resolve:hover{background:var(--green-dim)}
+.msg-btn.escalate{color:var(--red);border-color:var(--red-mid)}
+.msg-btn.escalate:hover{background:var(--red-dim)}
+
+/* ── ADD APPT MODAL ── */
+.modal-bg{
+  position:fixed;inset:0;z-index:300;
+  background:rgba(17,24,39,.45);backdrop-filter:blur(3px);
+  display:none;align-items:center;justify-content:center;padding:1rem;
+}
+.modal-bg.open{display:flex}
+.modal{
+  background:var(--white);border-radius:var(--rad2);
+  width:100%;max-width:480px;box-shadow:var(--shadow3);
+  animation:modalIn .2s ease;overflow:hidden;
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+.modal-head{
+  padding:1rem 1.25rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--gray5);
+}
+.modal-title{font-size:.95rem;font-weight:700;color:var(--navy)}
+.modal-close{
+  width:28px;height:28px;border-radius:6px;border:1px solid var(--border);
+  background:var(--white);cursor:pointer;font-size:.85rem;
+  display:flex;align-items:center;justify-content:center;color:var(--gray);
+  transition:all .15s;
+}
+.modal-close:hover{background:var(--red-dim);color:var(--red);border-color:var(--red-mid)}
+.modal-body{padding:1.25rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.form-group{display:flex;flex-direction:column;gap:.3rem}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:.72rem;font-weight:600;color:var(--ink2);text-transform:uppercase;letter-spacing:.04em}
+.form-inp, .form-sel, .form-ta{
+  font-family:'Inter',sans-serif;font-size:.83rem;
+  padding:.5rem .7rem;border:1px solid var(--border2);border-radius:7px;
+  color:var(--ink);background:var(--white);outline:none;
+  transition:border-color .15s;width:100%;
+}
+.form-inp:focus,.form-sel:focus,.form-ta:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(10,126,116,.08)}
+.form-ta{resize:vertical;min-height:70px}
+.conflict-warning{
+  background:var(--gold-dim);border:1px solid var(--gold-mid);
+  border-radius:7px;padding:.65rem .85rem;font-size:.78rem;
+  color:var(--gold);font-weight:600;margin-top:.5rem;display:none;
+}
+.conflict-warning.show{display:block}
+.modal-foot{
+  padding:.85rem 1.25rem;border-top:1px solid var(--border);
+  display:flex;justify-content:flex-end;gap:.5rem;background:var(--gray5);
+}
+
+/* ── APPT DETAIL MODAL ── */
+.detail-modal{max-width:440px}
+.detail-row{display:flex;justify-content:space-between;padding:.45rem 0;border-bottom:1px solid var(--border);font-size:.82rem}
+.detail-row:last-child{border-bottom:none}
+.detail-label{font-weight:600;color:var(--gray)}
+.detail-val{color:var(--ink);text-align:right}
+.detail-actions{display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap}
+
+/* ── LOG MESSAGE MODAL ── */
+.log-modal{max-width:460px}
+
+/* ── BUTTONS ── */
+.btn{
+  font-family:'Inter',sans-serif;font-size:.8rem;font-weight:600;
+  padding:.5rem 1rem;border-radius:7px;cursor:pointer;
+  border:1px solid transparent;transition:all .15s;
+  display:inline-flex;align-items:center;gap:.35rem;
+}
+.btn-primary{background:var(--teal);color:var(--white);border-color:var(--teal)}
+.btn-primary:hover{background:var(--teal2);border-color:var(--teal2)}
+.btn-secondary{background:var(--white);color:var(--ink2);border-color:var(--border2)}
+.btn-secondary:hover{background:var(--gray4)}
+.btn-danger{background:var(--white);color:var(--red);border-color:var(--red-mid)}
+.btn-danger:hover{background:var(--red-dim)}
+.btn-warning{background:var(--white);color:var(--gold);border-color:var(--gold-mid)}
+.btn-warning:hover{background:var(--gold-dim)}
+.btn-sm{font-size:.72rem;padding:.35rem .7rem}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);
+  background:var(--navy);color:var(--white);
+  padding:.65rem 1.25rem;border-radius:8px;font-size:.82rem;font-weight:500;
+  box-shadow:var(--shadow3);opacity:0;transition:opacity .3s;
+  pointer-events:none;z-index:999;white-space:nowrap;
+}
+#toast.show{opacity:1}
+
+/* ── EMPTY ── */
+.empty-slot{font-size:.75rem;color:var(--gray2);font-style:italic;padding:.4rem 0}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--gray3);border-radius:99px}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-left">
+    <a class="tb-back" href="index.html">← Hub</a>
+    <div class="tb-divider"></div>
+    <div class="tb-title">
+      <div class="tb-icon">📅</div>
+      Scheduling & Phone Messages
+    </div>
+  </div>
+  <div class="tb-right">
+    <div class="status-dot"><div class="dot"></div>System Online</div>
+    <div class="tb-divider"></div>
+    <span class="tb-date" id="tb-date">—</span>
+    <span class="tb-clock" id="tb-clock">—</span>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="layout">
+
+  <!-- LEFT: SCHEDULE -->
+  <div>
+    <!-- Stats -->
+    <div class="stats-bar" style="margin-bottom:1rem">
+      <div class="stat-box"><div class="stat-num" id="st-total">0</div><div class="stat-lbl">Scheduled</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-checkedin" style="color:var(--green)">0</div><div class="stat-lbl">Checked In</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-cancelled" style="color:var(--red)">0</div><div class="stat-lbl">Cancelled</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-noshow" style="color:var(--gold)">0</div><div class="stat-lbl">No-Show</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">📅 Daily Appointment Schedule</div>
+        <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ New Appointment</button>
+      </div>
+      <div class="panel-body">
+        <!-- Controls -->
+        <div class="sched-controls">
+          <div class="date-nav">
+            <button class="date-btn" onclick="changeDate(-1)">‹</button>
+            <div class="date-display" id="date-display">—</div>
+            <button class="date-btn" onclick="changeDate(1)">›</button>
+          </div>
+          <div class="provider-tabs">
+            <button class="prov-tab all active" onclick="setProvider('ALL')">All Providers</button>
+            <button class="prov-tab" onclick="setProvider('Dr. Evans')">Dr. Evans</button>
+            <button class="prov-tab" onclick="setProvider('Dr. Walsh')">Dr. Walsh</button>
+            <button class="prov-tab" onclick="setProvider('Dr. Nguyen')">Dr. Nguyen</button>
+            <button class="prov-tab" onclick="setProvider('Dr. Lee')">Dr. Lee</button>
+            <button class="prov-tab" onclick="setProvider('Dr. Cohen')">Dr. Cohen</button>
+          </div>
+        </div>
+        <!-- Time Grid -->
+        <div class="time-grid" id="time-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN -->
+  <div class="right-col">
+
+    <!-- Phone Messages -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">📞 Phone Messages <span id="msg-badge" style="background:var(--red);color:#fff;font-size:.65rem;padding:.1rem .45rem;border-radius:99px;margin-left:.3rem;display:none"></span></div>
+        <button class="btn btn-secondary btn-sm" onclick="openLogModal()">+ Log Message</button>
+      </div>
+      <div class="panel-body">
+        <div class="msg-list" id="msg-list"></div>
+      </div>
+    </div>
+
+    <!-- Quick Reference -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">📋 Quick Reference</div>
+      </div>
+      <div class="panel-body" style="font-size:.78rem;color:var(--ink2);line-height:1.7">
+        <div style="font-weight:700;color:var(--navy);margin-bottom:.4rem">Appointment Types</div>
+        <div>• <strong>New Patient</strong> — 60 min · requires insurance card</div>
+        <div>• <strong>Follow-Up</strong> — 30 min · established patient</div>
+        <div>• <strong>Annual Wellness</strong> — 45 min · preventive visit</div>
+        <div>• <strong>Sick Visit / Acute</strong> — 20 min · same-day if available</div>
+        <div>• <strong>Pre-Op Clearance</strong> — 45 min · labs required first</div>
+        <div style="font-weight:700;color:var(--navy);margin:.75rem 0 .4rem">Message Routing</div>
+        <div>• Refill requests → <strong>Nurse / MA</strong></div>
+        <div>• Lab results → <strong>Provider</strong></div>
+        <div>• Billing questions → <strong>Front Desk / Billing</strong></div>
+        <div>• Urgent clinical concern → <strong>Provider STAT</strong></div>
+        <div>• Scheduling → <strong>Front Desk</strong></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ADD APPOINTMENT MODAL -->
+<div class="modal-bg" id="add-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">📅 Schedule New Appointment</div>
+      <button class="modal-close" onclick="closeModal('add-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Patient</label>
+          <select class="form-sel" id="add-patient" onchange="autofillPatient()">
+            <option value="">— Select patient —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Provider</label>
+          <select class="form-sel" id="add-provider">
+            <option value="">— Select provider —</option>
+            <option>Dr. Evans</option>
+            <option>Dr. Walsh</option>
+            <option>Dr. Nguyen</option>
+            <option>Dr. Lee</option>
+            <option>Dr. Cohen</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input class="form-inp" type="date" id="add-date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Time</label>
+          <select class="form-sel" id="add-time">
+            <option value="">— Select time —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Visit Type</label>
+          <select class="form-sel" id="add-type" onchange="updateDuration()">
+            <option value="">— Select type —</option>
+            <option value="New Patient">New Patient (60 min)</option>
+            <option value="Follow-Up">Follow-Up (30 min)</option>
+            <option value="Annual Wellness">Annual Wellness (45 min)</option>
+            <option value="Sick Visit">Sick Visit (20 min)</option>
+            <option value="Pre-Op Clearance">Pre-Op Clearance (45 min)</option>
+            <option value="Sports Physical">Sports Physical (30 min)</option>
+            <option value="Prenatal">Prenatal Visit (30 min)</option>
+            <option value="Lab Review">Lab Review (20 min)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Insurance</label>
+          <input class="form-inp" type="text" id="add-insurance" placeholder="Auto-filled from patient">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Reason for Visit</label>
+          <input class="form-inp" type="text" id="add-reason" placeholder="Chief complaint or reason">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Notes</label>
+          <textarea class="form-ta" id="add-notes" placeholder="Special instructions, prep needed, interpreter required, etc."></textarea>
+        </div>
+      </div>
+      <div class="conflict-warning" id="conflict-warning">⚠️ Scheduling conflict detected — another appointment exists at this time for this provider. Please choose a different time slot.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('add-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAppointment()">✓ Schedule Appointment</button>
+    </div>
+  </div>
+</div>
+
+<!-- APPOINTMENT DETAIL MODAL -->
+<div class="modal-bg" id="detail-modal">
+  <div class="modal detail-modal">
+    <div class="modal-head">
+      <div class="modal-title" id="detail-title">Appointment Details</div>
+      <button class="modal-close" onclick="closeModal('detail-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="detail-content"></div>
+      <div class="detail-actions" id="detail-actions"></div>
+    </div>
+  </div>
+</div>
+
+<!-- LOG MESSAGE MODAL -->
+<div class="modal-bg" id="log-modal">
+  <div class="modal log-modal">
+    <div class="modal-head">
+      <div class="modal-title">📞 Log Phone Message</div>
+      <button class="modal-close" onclick="closeModal('log-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Caller Name</label>
+          <input class="form-inp" type="text" id="log-caller" placeholder="Patient or caller name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Call Back Number</label>
+          <input class="form-inp" type="tel" id="log-phone" placeholder="(555) 000-0000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Message Type</label>
+          <select class="form-sel" id="log-type">
+            <option value="routine">Routine</option>
+            <option value="urgent">Urgent</option>
+            <option value="refill">Refill Request</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Route To</label>
+          <select class="form-sel" id="log-route">
+            <option>Front Desk</option>
+            <option>Nurse / MA</option>
+            <option>Dr. Evans</option>
+            <option>Dr. Walsh</option>
+            <option>Dr. Nguyen</option>
+            <option>Dr. Lee</option>
+            <option>Dr. Cohen</option>
+            <option>Billing Department</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Message</label>
+          <textarea class="form-ta" id="log-message" placeholder="Document the caller's message accurately and completely..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('log-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMessage()">✓ Log Message</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESCHEDULE MODAL -->
+<div class="modal-bg" id="reschedule-modal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-head">
+      <div class="modal-title">🔄 Reschedule Appointment</div>
+      <button class="modal-close" onclick="closeModal('reschedule-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="reschedule-info" style="font-size:.82rem;color:var(--ink2);margin-bottom:1rem;padding:.65rem;background:var(--gray5);border-radius:7px;border:1px solid var(--border)"></div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">New Date</label>
+          <input class="form-inp" type="date" id="rs-date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Time</label>
+          <select class="form-sel" id="rs-time"></select>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Reason for Reschedule</label>
+          <input class="form-inp" type="text" id="rs-reason" placeholder="Patient request, provider unavailable, etc.">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('reschedule-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmReschedule()">✓ Confirm Reschedule</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── PATIENTS ──
+const PATIENTS = [
+  {id:'MRN00001',name:'Ethan Morales',    insurance:'Medicaid'},
+  {id:'MRN00002',name:'Lily Chen',        insurance:'Blue Cross Blue Shield PPO'},
+  {id:'MRN00003',name:'Jamal Robinson',   insurance:'United Healthcare'},
+  {id:'MRN00004',name:'Sofia Martinez',   insurance:'Aetna Student Health Plan'},
+  {id:'MRN00005',name:'Sarah Thompson',   insurance:'Blue Cross Blue Shield'},
+  {id:'MRN00006',name:'Michael Turner',   insurance:"Workers' Compensation"},
+  {id:'MRN00007',name:'Angela Brooks',    insurance:'Medicare Advantage'},
+  {id:'MRN00008',name:'Robert King',      insurance:'United Healthcare'},
+  {id:'MRN00009',name:'Carol White',      insurance:'Medicare'},
+  {id:'MRN00010',name:'Harold Simmons',   insurance:'Medicare'},
+  {id:'MRN00011',name:'Margaret Hill',    insurance:'Medicare + Supplemental'},
+  {id:'MRN00012',name:'Destiny Washington',insurance:'Medicaid'},
+  {id:'MRN00013',name:'Marcus Webb',      insurance:'Self-Pay'},
+  {id:'MRN00014',name:'Diana Reyes',      insurance:'Cigna HMO'},
+  {id:'MRN00015',name:'James Kowalski',   insurance:'Tricare Prime'},
+  {id:'MRN00016',name:'Evelyn Carter',    insurance:'Medicare + Medicaid (Dual Eligible)'},
+];
+
+const PROVIDERS = ['Dr. Evans','Dr. Walsh','Dr. Nguyen','Dr. Lee','Dr. Cohen'];
+const PROV_CLASS = {'Dr. Evans':'prov-evans','Dr. Walsh':'prov-walsh','Dr. Nguyen':'prov-nguyen','Dr. Lee':'prov-lee','Dr. Cohen':'prov-cohen'};
+
+const TIME_SLOTS = [
+  '8:00 AM','8:20 AM','8:30 AM','8:40 AM','9:00 AM','9:20 AM','9:30 AM','9:40 AM',
+  '10:00 AM','10:20 AM','10:30 AM','10:40 AM','11:00 AM','11:20 AM','11:30 AM','11:40 AM',
+  '12:00 PM','1:00 PM','1:20 PM','1:30 PM','1:40 PM','2:00 PM','2:20 PM','2:30 PM',
+  '2:40 PM','3:00 PM','3:20 PM','3:30 PM','3:40 PM','4:00 PM','4:20 PM','4:30 PM',
+];
+const DISPLAY_SLOTS = [
+  '8:00 AM','8:20 AM','8:40 AM','9:00 AM','9:20 AM','9:40 AM',
+  '10:00 AM','10:20 AM','10:40 AM','11:00 AM','11:20 AM','11:40 AM',
+  '12:00 PM','1:00 PM','1:20 PM','1:40 PM','2:00 PM','2:20 PM',
+  '2:40 PM','3:00 PM','3:20 PM','3:40 PM','4:00 PM','4:20 PM',
+];
+
+// ── STATE ──
+let _currentDate = new Date();
+let _provFilter  = 'ALL';
+let _editId      = null;
+let _appointments = JSON.parse(localStorage.getItem('sched_appts') || 'null') || buildDefaultSchedule();
+let _messages     = JSON.parse(localStorage.getItem('sched_msgs')  || 'null') || buildDefaultMessages();
+
+function saveState(){ localStorage.setItem('sched_appts', JSON.stringify(_appointments)); localStorage.setItem('sched_msgs', JSON.stringify(_messages)); }
+
+function dateKey(d){ return d.toISOString().split('T')[0]; }
+
+// ── DEFAULT SCHEDULE ──
+function buildDefaultSchedule(){
+  const today = new Date();
+  const tk = dateKey(today);
+  return [
+    {id:uid(), date:tk, time:'8:30 AM', patient:'Robert King',      mrn:'MRN00008', provider:'Dr. Evans',  type:'Follow-Up',        insurance:'United Healthcare',        reason:'Hypertension check',              status:'checked-in', notes:''},
+    {id:uid(), date:tk, time:'9:00 AM', patient:'Angela Brooks',    mrn:'MRN00007', provider:'Dr. Walsh',  type:'Follow-Up',        insurance:'Medicare Advantage',       reason:'Diabetes management',             status:'scheduled',  notes:'Needs HbA1c results reviewed'},
+    {id:uid(), date:tk, time:'9:00 AM', patient:'Destiny Washington',mrn:'MRN00012', provider:'Dr. Nguyen',type:'Follow-Up',        insurance:'Medicaid',                 reason:'TSH results + anxiety follow-up', status:'scheduled',  notes:'Mother accompanying patient'},
+    {id:uid(), date:tk, time:'9:30 AM', patient:'James Kowalski',   mrn:'MRN00015', provider:'Dr. Evans',  type:'Pre-Op Clearance', insurance:'Tricare Prime',            reason:'Pre-op cholecystectomy',          status:'scheduled',  notes:'⚠ CRITICAL: Iodine/contrast allergy — alert surgical team'},
+    {id:uid(), date:tk, time:'10:00 AM',patient:'Evelyn Carter',    mrn:'MRN00016', provider:'Dr. Lee',    type:'Follow-Up',        insurance:'Medicare + Medicaid (Dual Eligible)', reason:'Diabetes + CHF review',  status:'scheduled',  notes:'Dual eligible — bill Medicare primary'},
+    {id:uid(), date:tk, time:'10:30 AM',patient:'Diana Reyes',      mrn:'MRN00014', provider:'Dr. Walsh',  type:'Follow-Up',        insurance:'Cigna HMO',               reason:'MDD medication management',       status:'scheduled',  notes:'HMO prior auth pending for Lorazepam'},
+    {id:uid(), date:tk, time:'11:00 AM',patient:'Sofia Martinez',   mrn:'MRN00004', provider:'Dr. Nguyen', type:'Follow-Up',        insurance:'Aetna Student Health Plan', reason:'OCP refill + wellness',          status:'no-show',    notes:'Called x2 — no answer'},
+    {id:uid(), date:tk, time:'11:30 AM',patient:'Harold Simmons',   mrn:'MRN00010', provider:'Dr. Lee',    type:'Follow-Up',        insurance:'Medicare',                 reason:'COPD management',                 status:'scheduled',  notes:'Daughter driving patient'},
+    {id:uid(), date:tk, time:'1:00 PM', patient:'Jamal Robinson',   mrn:'MRN00003', provider:'Dr. Cohen',  type:'Sports Physical',  insurance:'United Healthcare',        reason:'Sports physical clearance',       status:'scheduled',  notes:''},
+    {id:uid(), date:tk, time:'1:30 PM', patient:'Marcus Webb',      mrn:'MRN00013', provider:'Dr. Evans',  type:'Sick Visit',       insurance:'Self-Pay',                 reason:'Cough & congestion follow-up',    status:'scheduled',  notes:'Self-pay — collect $75 flat fee at check-in'},
+    {id:uid(), date:tk, time:'2:00 PM', patient:'Sarah Thompson',   mrn:'MRN00005', provider:'Dr. Nguyen', type:'Prenatal',         insurance:'Blue Cross Blue Shield',   reason:'Routine prenatal visit',          status:'scheduled',  notes:''},
+    {id:uid(), date:tk, time:'2:30 PM', patient:'Carol White',      mrn:'MRN00009', provider:'Dr. Evans',  type:'Follow-Up',        insurance:'Medicare',                 reason:'Post-op knee follow-up',          status:'scheduled',  notes:'Wheelchair accessible room needed'},
+    {id:uid(), date:tk, time:'3:00 PM', patient:'Margaret Hill',    mrn:'MRN00011', provider:'Dr. Lee',    type:'Follow-Up',        insurance:'Medicare + Supplemental',  reason:"Alzheimer's quarterly review",    status:'scheduled',  notes:'Caregiver must be present'},
+    {id:uid(), date:tk, time:'3:30 PM', patient:'Lily Chen',        mrn:'MRN00002', provider:'Dr. Cohen',  type:'Sick Visit',       insurance:'Blue Cross Blue Shield PPO', reason:'Sore throat, fever',            status:'scheduled',  notes:''},
+  ];
+}
+
+function buildDefaultMessages(){
+  const now = new Date();
+  const fmt = d => d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  const t1 = new Date(now - 45*60000);
+  const t2 = new Date(now - 20*60000);
+  const t3 = new Date(now - 8*60000);
+  return [
+    {id:uid(), caller:'Angela Brooks', phone:'(555) 201-4433', type:'refill',  route:'Nurse / MA',  time:fmt(t1), message:'Patient requesting refill of Metformin 500mg. States she has 3 days left. Last refill was 30 days ago. Pharmacy: Walgreens on Main St.', resolved:false},
+    {id:uid(), caller:'Unknown / Daughter of Margaret Hill', phone:'(555) 667-5544', type:'urgent', route:'Dr. Lee', time:fmt(t2), message:'Caller states patient fell this morning getting out of bed. No visible injury but patient seems confused and is not walking steadily. Wants to know if she should bring her in today.', resolved:false},
+    {id:uid(), caller:'James Kowalski', phone:'(555) 771-4422', type:'routine', route:'Front Desk', time:fmt(t3), message:'Patient calling to confirm his 9:30 AM pre-op appointment today. Also asking if he needs to bring anything specific. Please confirm appointment and advise to bring insurance card and photo ID.', resolved:false},
+  ];
+}
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+// ── CLOCK & DATE ──
+function updateClock(){
+  const now = new Date();
+  document.getElementById('tb-clock').textContent = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+function updateDateDisplay(){
+  const opts = {weekday:'long',month:'long',day:'numeric',year:'numeric'};
+  document.getElementById('tb-date').textContent   = _currentDate.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  document.getElementById('date-display').textContent = _currentDate.toLocaleDateString('en-US',opts);
+}
+updateClock(); setInterval(updateClock, 1000);
+
+function changeDate(n){
+  _currentDate = new Date(_currentDate);
+  _currentDate.setDate(_currentDate.getDate() + n);
+  updateDateDisplay(); renderGrid(); updateStats();
+}
+
+// ── PROVIDER FILTER ──
+function setProvider(p){
+  _provFilter = p;
+  document.querySelectorAll('.prov-tab').forEach(b=>{
+    b.classList.remove('active');
+    const label = b.textContent.trim();
+    if((p==='ALL' && label==='All Providers') || label===p) b.classList.add('active');
+  });
+  renderGrid();
+}
+
+// ── RENDER GRID ──
+function renderGrid(){
+  const grid   = document.getElementById('time-grid');
+  const dk     = dateKey(_currentDate);
+  const dayAppts = _appointments.filter(a=>a.date===dk && (a.status !== 'cancelled' || true));
+
+  let html = `<div class="tg-header"><div class="tg-header-time">Time</div><div class="tg-header-appt">Appointment</div></div>`;
+
+  DISPLAY_SLOTS.forEach(slot=>{
+    const isHour = slot.endsWith(':00 AM') || slot.endsWith(':00 PM');
+    const appts  = dayAppts.filter(a => a.time===slot && (_provFilter==='ALL' || a.provider===_provFilter));
+    const isEmpty = appts.length === 0;
+
+    html += `<div class="tg-row${isHour?' hour-start':''}">`;
+    html += `<div class="tg-time${isHour?' hour':''}">${slot}</div>`;
+    html += `<div class="tg-slot" onclick="slotClick('${slot}')">`;
+
+    if(isEmpty){
+      html += `<span class="empty-slot">Available</span><span class="slot-add">+ Add appointment</span>`;
+    } else {
+      appts.forEach(a=>{
+        const pc = PROV_CLASS[a.provider] || 'prov-evans';
+        const statusClass = `status-${a.status.replace(' ','-')}`;
+        const statusLabel = a.status.replace('-',' ').replace(/\b\w/g,c=>c.toUpperCase());
+        html += `<div class="appt-chip ${pc}" onclick="event.stopPropagation();openDetail('${a.id}')">
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.15rem">
+              <span class="appt-name">${a.patient}</span>
+              <span class="appt-status ${statusClass}">${statusLabel}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:.5rem">
+              <span class="appt-type">${a.type} · ${a.provider}</span>
+              <span class="appt-ins" style="background:var(--gray4);color:var(--gray)">${a.insurance}</span>
+            </div>
+          </div>
+        </div>`;
+      });
+    }
+    html += `</div></div>`;
+  });
+  grid.innerHTML = html;
+}
+
+function slotClick(slot){
+  openAddModal(slot);
+}
+
+// ── STATS ──
+function updateStats(){
+  const dk = dateKey(_currentDate);
+  const day = _appointments.filter(a=>a.date===dk);
+  document.getElementById('st-total').textContent     = day.filter(a=>a.status!=='cancelled').length;
+  document.getElementById('st-checkedin').textContent = day.filter(a=>a.status==='checked-in').length;
+  document.getElementById('st-cancelled').textContent = day.filter(a=>a.status==='cancelled').length;
+  document.getElementById('st-noshow').textContent    = day.filter(a=>a.status==='no-show').length;
+}
+
+// ── ADD APPOINTMENT ──
+function openAddModal(presetTime){
+  // Populate patient select
+  const sel = document.getElementById('add-patient');
+  sel.innerHTML = '<option value="">— Select patient —</option>';
+  PATIENTS.forEach(p=>{ const o=document.createElement('option'); o.value=p.id; o.text=p.name; sel.appendChild(o); });
+
+  // Populate time select
+  const tsel = document.getElementById('add-time');
+  tsel.innerHTML = '<option value="">— Select time —</option>';
+  TIME_SLOTS.forEach(t=>{ const o=document.createElement('option'); o.value=t; o.text=t; tsel.appendChild(o); });
+  if(presetTime) tsel.value = presetTime;
+
+  // Default date
+  document.getElementById('add-date').value = dateKey(_currentDate);
+  document.getElementById('add-insurance').value = '';
+  document.getElementById('add-reason').value    = '';
+  document.getElementById('add-notes').value     = '';
+  document.getElementById('conflict-warning').classList.remove('show');
+
+  document.getElementById('add-modal').classList.add('open');
+}
+
+function autofillPatient(){
+  const mrn = document.getElementById('add-patient').value;
+  const pt  = PATIENTS.find(p=>p.id===mrn);
+  document.getElementById('add-insurance').value = pt ? pt.insurance : '';
+}
+
+function updateDuration(){}
+
+function checkConflict(){
+  const date     = document.getElementById('add-date').value;
+  const time     = document.getElementById('add-time').value;
+  const provider = document.getElementById('add-provider').value;
+  if(!date||!time||!provider) return false;
+  return _appointments.some(a=>a.date===date&&a.time===time&&a.provider===provider&&a.status!=='cancelled'&&a.id!==_editId);
+}
+
+function saveAppointment(){
+  const mrnVal   = document.getElementById('add-patient').value;
+  const pt       = PATIENTS.find(p=>p.id===mrnVal);
+  const provider = document.getElementById('add-provider').value;
+  const date     = document.getElementById('add-date').value;
+  const time     = document.getElementById('add-time').value;
+  const type     = document.getElementById('add-type').value;
+  const reason   = document.getElementById('add-reason').value.trim();
+
+  if(!pt||!provider||!date||!time||!type){
+    toast('⚠ Please fill in all required fields.'); return;
+  }
+  if(checkConflict()){
+    document.getElementById('conflict-warning').classList.add('show');
+    toast('⚠ Scheduling conflict — choose a different time or provider.'); return;
+  }
+
+  _appointments.push({
+    id: uid(), date, time,
+    patient: pt.name, mrn: pt.id,
+    provider, type,
+    insurance: document.getElementById('add-insurance').value,
+    reason, status: 'scheduled',
+    notes: document.getElementById('add-notes').value.trim()
+  });
+  saveState(); closeModal('add-modal'); renderGrid(); updateStats();
+  toast(`✓ ${pt.name} scheduled with ${provider} at ${time}`);
+}
+
+// ── DETAIL MODAL ──
+function openDetail(id){
+  const a = _appointments.find(x=>x.id===id);
+  if(!a) return;
+  _editId = id;
+  document.getElementById('detail-title').textContent = `${a.patient} — ${a.time}`;
+  document.getElementById('detail-content').innerHTML = `
+    <div class="detail-row"><span class="detail-label">Patient</span><span class="detail-val">${a.patient} (${a.mrn})</span></div>
+    <div class="detail-row"><span class="detail-label">Provider</span><span class="detail-val">${a.provider}</span></div>
+    <div class="detail-row"><span class="detail-label">Date & Time</span><span class="detail-val">${formatDate(a.date)} at ${a.time}</span></div>
+    <div class="detail-row"><span class="detail-label">Visit Type</span><span class="detail-val">${a.type}</span></div>
+    <div class="detail-row"><span class="detail-label">Insurance</span><span class="detail-val">${a.insurance}</span></div>
+    <div class="detail-row"><span class="detail-label">Reason</span><span class="detail-val">${a.reason}</span></div>
+    <div class="detail-row"><span class="detail-label">Status</span><span class="detail-val"><span class="appt-status status-${a.status.replace(' ','-')}">${a.status.replace('-',' ').replace(/\b\w/g,c=>c.toUpperCase())}</span></span></div>
+    ${a.notes?`<div class="detail-row"><span class="detail-label">Notes</span><span class="detail-val" style="max-width:220px;text-align:right">${a.notes}</span></div>`:''}
+  `;
+  const acts = document.getElementById('detail-actions');
+  acts.innerHTML = '';
+  if(a.status==='scheduled'){
+    acts.innerHTML += `<button class="btn btn-secondary btn-sm" onclick="checkIn('${id}')">✓ Check In</button>`;
+    acts.innerHTML += `<button class="btn btn-warning btn-sm" onclick="openReschedule('${id}')">🔄 Reschedule</button>`;
+    acts.innerHTML += `<button class="btn btn-danger btn-sm" onclick="cancelAppt('${id}')">✕ Cancel</button>`;
+  } else if(a.status==='checked-in'){
+    acts.innerHTML += `<button class="btn btn-primary btn-sm" onclick="markComplete('${id}')">✓ Mark Complete</button>`;
+    acts.innerHTML += `<button class="btn btn-warning btn-sm" onclick="openReschedule('${id}')">🔄 Reschedule</button>`;
+  } else if(a.status==='no-show'){
+    acts.innerHTML += `<button class="btn btn-warning btn-sm" onclick="openReschedule('${id}')">🔄 Reschedule</button>`;
+    acts.innerHTML += `<button class="btn btn-secondary btn-sm" onclick="markScheduled('${id}')">↩ Reset to Scheduled</button>`;
+  }
+  document.getElementById('detail-modal').classList.add('open');
+}
+
+function checkIn(id){
+  updateStatus(id,'checked-in'); closeModal('detail-modal');
+  const a=_appointments.find(x=>x.id===id);
+  toast(`✓ ${a.patient} checked in successfully`);
+}
+function cancelAppt(id){
+  if(!confirm('Cancel this appointment?')) return;
+  updateStatus(id,'cancelled'); closeModal('detail-modal');
+  const a=_appointments.find(x=>x.id===id);
+  toast(`Appointment for ${a.patient} cancelled`);
+}
+function markComplete(id){ updateStatus(id,'completed'); closeModal('detail-modal'); toast('Appointment marked complete'); }
+function markScheduled(id){ updateStatus(id,'scheduled'); closeModal('detail-modal'); toast('Appointment reset to scheduled'); }
+function updateStatus(id, status){ const a=_appointments.find(x=>x.id===id); if(a){ a.status=status; saveState(); renderGrid(); updateStats(); } }
+
+// ── RESCHEDULE ──
+function openReschedule(id){
+  closeModal('detail-modal');
+  const a = _appointments.find(x=>x.id===id);
+  _editId = id;
+  document.getElementById('reschedule-info').innerHTML = `<strong>${a.patient}</strong> · ${a.type} · ${a.provider}<br>Current: ${formatDate(a.date)} at ${a.time}`;
+  document.getElementById('rs-date').value = a.date;
+  document.getElementById('rs-reason').value = '';
+  const tsel = document.getElementById('rs-time');
+  tsel.innerHTML = '';
+  TIME_SLOTS.forEach(t=>{ const o=document.createElement('option'); o.value=t; o.text=t; if(t===a.time) o.selected=true; tsel.appendChild(o); });
+  document.getElementById('reschedule-modal').classList.add('open');
+}
+function confirmReschedule(){
+  const a      = _appointments.find(x=>x.id===_editId);
+  const newDate= document.getElementById('rs-date').value;
+  const newTime= document.getElementById('rs-time').value;
+  const reason = document.getElementById('rs-reason').value.trim();
+  if(!reason){ toast('⚠ Please enter a reason for rescheduling.'); return; }
+  const conflict = _appointments.some(x=>x.date===newDate&&x.time===newTime&&x.provider===a.provider&&x.status!=='cancelled'&&x.id!==_editId);
+  if(conflict){ toast('⚠ Conflict at new time — choose another slot.'); return; }
+  a.date   = newDate;
+  a.time   = newTime;
+  a.status = 'scheduled';
+  a.notes  = (a.notes ? a.notes + ' | ' : '') + `Rescheduled: ${reason}`;
+  saveState(); closeModal('reschedule-modal'); renderGrid(); updateStats();
+  toast(`✓ ${a.patient} rescheduled to ${formatDate(newDate)} at ${newTime}`);
+}
+
+// ── MESSAGES ──
+function renderMessages(){
+  const list   = document.getElementById('msg-list');
+  const unread = _messages.filter(m=>!m.resolved).length;
+  const badge  = document.getElementById('msg-badge');
+  if(unread>0){ badge.textContent=unread; badge.style.display='inline'; }
+  else badge.style.display='none';
+
+  if(!_messages.length){ list.innerHTML='<div style="font-size:.8rem;color:var(--gray);text-align:center;padding:1rem">No messages logged</div>'; return; }
+
+  list.innerHTML = _messages.slice().reverse().map(m=>`
+    <div class="msg-card ${m.type}${m.resolved?' resolved':''}">
+      <div class="msg-top">
+        <span class="msg-caller">${m.caller}</span>
+        <span class="msg-time">${m.time}</span>
+      </div>
+      <div class="msg-body">${m.message}</div>
+      <div class="msg-route">Route to: <span>${m.route}</span>${m.phone?` · CB: ${m.phone}`:''}</div>
+      ${!m.resolved?`<div class="msg-actions">
+        <button class="msg-btn resolve" onclick="resolveMsg('${m.id}')">✓ Resolved</button>
+        <button class="msg-btn escalate" onclick="escalateMsg('${m.id}')">↑ Escalate</button>
+      </div>`:`<div style="font-size:.7rem;color:var(--green);font-weight:600">✓ Resolved</div>`}
+    </div>`).join('');
+}
+
+function openLogModal(){
+  document.getElementById('log-caller').value  = '';
+  document.getElementById('log-phone').value   = '';
+  document.getElementById('log-message').value = '';
+  document.getElementById('log-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('log-caller').focus(),80);
+}
+function saveMessage(){
+  const caller = document.getElementById('log-caller').value.trim();
+  const msg    = document.getElementById('log-message').value.trim();
+  if(!caller||!msg){ toast('⚠ Caller name and message are required.'); return; }
+  _messages.push({
+    id: uid(), caller, phone: document.getElementById('log-phone').value.trim(),
+    type: document.getElementById('log-type').value,
+    route: document.getElementById('log-route').value,
+    time: new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
+    message: msg, resolved: false
+  });
+  saveState(); closeModal('log-modal'); renderMessages();
+  toast(`✓ Message from ${caller} logged`);
+}
+function resolveMsg(id){ const m=_messages.find(x=>x.id===id); if(m){ m.resolved=true; saveState(); renderMessages(); toast('Message marked resolved'); } }
+function escalateMsg(id){ const m=_messages.find(x=>x.id===id); if(m){ m.type='urgent'; saveState(); renderMessages(); toast('Message escalated to urgent'); } }
+
+// ── MODAL HELPERS ──
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-bg').forEach(bg=>{ bg.addEventListener('click',e=>{ if(e.target===bg) bg.classList.remove('open'); }); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.modal-bg.open').forEach(m=>m.classList.remove('open')); });
+
+// ── TOAST ──
+let _tt;
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(_tt); _tt=setTimeout(()=>t.classList.remove('show'),3000); }
+
+// ── UTILS ──
+function formatDate(dk){ return new Date(dk+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}); }
+
+// ── INIT ──
+updateDateDisplay();
+renderGrid();
+updateStats();
+renderMessages();
+</script>
+</body>
+</html>
