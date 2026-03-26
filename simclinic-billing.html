@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HealthSim Hub · Billing & Coding</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #070e1a;
+  --bg2:       #0c1628;
+  --bg3:       #111f38;
+  --panel:     #0d1a2e;
+  --border:    #1a3050;
+  --border2:   #243d5e;
+  --teal:      #00c9b8;
+  --teal2:     #00a89a;
+  --teal-dim:  rgba(0,201,184,.12);
+  --teal-glow: rgba(0,201,184,.25);
+  --gold:      #f0b429;
+  --gold-dim:  rgba(240,180,41,.12);
+  --blue:      #1a6bb5;
+  --blue2:     #2580d4;
+  --green:     #10b981;
+  --green-dim: rgba(16,185,129,.15);
+  --red:       #ef4444;
+  --red-dim:   rgba(239,68,68,.15);
+  --purple:    #a78bfa;
+  --orange:    #f59e0b;
+  --white:     #e8f0f8;
+  --white2:    #d0dded;
+  --muted:     #7a9ab8;
+  --mono:      'IBM Plex Mono', monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{height:100%;}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--white);min-height:100vh;overflow-x:hidden;position:relative;}
+
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.07) 2px,rgba(0,0,0,.07) 4px);}
+body::after{content:'';position:fixed;top:-20%;left:50%;transform:translateX(-50%);
+  width:900px;height:500px;
+  background:radial-gradient(ellipse,rgba(0,150,100,.14) 0%,transparent 70%);
+  z-index:0;pointer-events:none;}
+
+/* STATUS BAR */
+.statusbar{position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(7,14,26,.95);border-bottom:1px solid var(--border);
+  padding:0 1.5rem;height:36px;display:flex;align-items:center;justify-content:space-between;
+  backdrop-filter:blur(8px);}
+.sb-left{display:flex;align-items:center;gap:1.5rem;}
+.sb-logo{font-family:'Rajdhani',sans-serif;font-size:.85rem;font-weight:700;letter-spacing:.15em;color:var(--teal);text-decoration:none;}
+.sb-back{font-size:.75rem;color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:.3rem;transition:color .15s;}
+.sb-back:hover{color:var(--white);}
+.sb-section{font-size:.72rem;color:var(--muted);font-family:var(--mono);letter-spacing:.05em;}
+.sb-right{display:flex;align-items:center;gap:1rem;}
+.sb-time{font-family:var(--mono);font-size:.72rem;color:var(--muted);}
+.sb-badge{font-size:.65rem;font-weight:700;letter-spacing:.1em;padding:.15rem .55rem;border-radius:3px;}
+.sb-badge.week{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(240,180,41,.3);}
+
+/* MAIN */
+main{position:relative;z-index:1;padding:60px 2rem 4rem;max-width:1100px;margin:0 auto;}
+
+/* PAGE HEADER */
+.page-header{margin-bottom:2rem;}
+.ph-eyebrow{font-family:var(--mono);font-size:.7rem;color:var(--teal);letter-spacing:.15em;margin-bottom:.5rem;}
+.ph-title{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:700;letter-spacing:.05em;line-height:1.1;color:var(--white);}
+.ph-title span{color:var(--teal);}
+.ph-sub{font-size:.9rem;color:var(--muted);margin-top:.5rem;max-width:600px;line-height:1.6;}
+.ph-stats{display:flex;gap:1.5rem;margin-top:1.2rem;flex-wrap:wrap;}
+.ph-stat{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.6rem 1rem;font-size:.8rem;}
+.ph-stat strong{color:var(--teal);font-family:var(--mono);display:block;font-size:1.1rem;margin-bottom:.1rem;}
+.ph-stat span{color:var(--muted);font-size:.72rem;}
+
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:1.5rem;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:4px;flex-wrap:wrap;}
+.tab{flex:1;min-width:120px;padding:.6rem .8rem;font-family:'IBM Plex Sans',sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--muted);border-radius:7px;transition:all .2s;display:flex;align-items:center;gap:.4rem;white-space:nowrap;justify-content:center;}
+.tab:hover{color:var(--white2);}
+.tab.active{background:var(--panel);color:var(--teal);border:1px solid var(--border2);box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.tab-icon{font-size:.85rem;}
+
+/* PANEL */
+.panel-section{display:none;}
+.panel-section.active{display:block;}
+
+/* SECTION LABEL */
+.sec-label{font-family:'Rajdhani',sans-serif;font-size:.8rem;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:.8rem;display:flex;align-items:center;gap:.5rem;}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* PATIENT SELECTOR */
+.patient-selector{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.2rem;margin-bottom:1.5rem;}
+.ps-label{font-size:.72rem;color:var(--muted);font-family:var(--mono);letter-spacing:.08em;margin-bottom:.7rem;}
+.ps-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem;}
+.ps-btn{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;cursor:pointer;transition:all .2s;text-align:left;font-family:'IBM Plex Sans',sans-serif;}
+.ps-btn:hover{border-color:var(--teal);background:var(--teal-dim);}
+.ps-btn.selected{border-color:var(--teal);background:var(--teal-dim);box-shadow:0 0 0 1px var(--teal-dim);}
+.ps-name{font-size:.85rem;font-weight:600;color:var(--white);display:block;}
+.ps-meta{font-size:.7rem;color:var(--muted);font-family:var(--mono);margin-top:.15rem;}
+.ps-ins{display:inline-block;font-size:.62rem;font-weight:700;letter-spacing:.05em;padding:.1rem .5rem;border-radius:3px;margin-top:.3rem;}
+.ins-medicaid{background:#1a3a2a;color:#6ee7b7;}
+.ins-medicare{background:#1e3a5f;color:#7dd3fc;}
+.ins-commercial{background:#1a2a3f;color:#93c5fd;}
+.ins-tricare{background:#2a1a3a;color:#c4b5fd;}
+.ins-workerscomp{background:#3a2a1a;color:#fcd34d;}
+.ins-hmo{background:#1a3a3a;color:#5eead4;}
+.ins-dual{background:#2a1a2a;color:#f0abfc;}
+
+/* ENCOUNTER CARD */
+.encounter-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:1.2rem;}
+.ec-header{padding:1rem 1.2rem;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:1rem;}
+.ec-patient{font-size:1rem;font-weight:600;color:var(--white);display:flex;align-items:center;gap:.6rem;}
+.ec-sub{font-size:.72rem;color:var(--muted);font-family:var(--mono);margin-top:.15rem;}
+.ec-ins-badge{font-size:.65rem;font-weight:700;padding:.2rem .6rem;border-radius:4px;}
+.ec-body{padding:1.2rem;}
+
+.scenario-box{background:rgba(0,201,184,.07);border:1px solid rgba(0,201,184,.2);border-radius:8px;padding:1rem;margin-bottom:1.2rem;font-size:.85rem;line-height:1.7;color:var(--white2);}
+.scenario-box .scenario-title{font-size:.72rem;font-weight:700;letter-spacing:.1em;color:var(--teal);margin-bottom:.5rem;}
+.scenario-box em{color:var(--gold);font-style:normal;font-weight:600;}
+
+/* CODE LEGEND */
+.code-legend{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:.7rem;font-size:.68rem;color:var(--white2);}
+.cl-item{display:flex;align-items:center;gap:.4rem;}
+
+/* CODING GRID */
+.code-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.2rem;}
+@media(max-width:600px){.code-grid{grid-template-columns:1fr;}}
+.code-block{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:.9rem;}
+.cb-title{font-size:.68rem;font-weight:700;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:.7rem;display:flex;align-items:center;gap:.4rem;}
+.code-row{display:flex;align-items:baseline;gap:.6rem;padding:.4rem 0;border-bottom:1px solid var(--border);font-size:.8rem;}
+.code-row:last-child{border-bottom:none;}
+.code-badge{font-family:var(--mono);font-size:.65rem;font-weight:700;padding:.1rem .5rem;border-radius:3px;flex-shrink:0;}
+/* ICD: solid left border accent = diagnosis (blue) */
+.badge-icd{background:#1e3a5f;color:#93d4ff;border-left:3px solid #7dd3fc;}
+/* CPT: solid top border accent = procedure (green) */
+.badge-cpt{background:#1a3a2a;color:#86efb0;border-top:3px solid #6ee7b7;}
+/* HCPCS: dashed border = supply/drug code (purple) */
+.badge-hcpcs{background:#3a1a3a;color:#d8b4fe;border:1.5px dashed #a78bfa;}
+.code-desc{color:var(--white2);flex:1;}
+.code-qty{font-size:.68rem;color:var(--gold);font-family:var(--mono);white-space:nowrap;}
+
+/* WATCH BOX */
+.watch-box{background:rgba(240,180,41,.08);border:1px solid rgba(240,180,41,.25);border-radius:8px;padding:.9rem;margin-bottom:1.2rem;}
+.watch-title{font-size:.68rem;font-weight:700;letter-spacing:.1em;color:var(--gold);margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem;}
+.watch-text{font-size:.83rem;color:var(--white2);line-height:1.65;}
+
+/* TASK LIST */
+.task-list{display:flex;flex-direction:column;gap:.4rem;margin-bottom:1.2rem;}
+.task-item{display:flex;align-items:flex-start;gap:.7rem;padding:.6rem .8rem;background:var(--panel);border:1px solid var(--border);border-radius:6px;font-size:.82rem;color:var(--white2);cursor:pointer;transition:all .15s;}
+.task-item:hover{border-color:var(--teal);background:var(--teal-dim);}
+.task-item.done{border-color:var(--green);background:var(--green-dim);text-decoration:line-through;color:var(--muted);}
+.task-check{width:18px;height:18px;border:1.5px solid var(--border2);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.7rem;transition:all .15s;}
+.task-item.done .task-check{background:var(--green);border-color:var(--green);color:white;}
+.task-mod{font-family:var(--mono);font-size:.62rem;font-weight:700;color:var(--muted);flex-shrink:0;margin-top:2px;}
+
+/* DISCUSSION */
+.disc-box{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:1rem;font-size:.85rem;color:var(--white2);line-height:1.7;font-style:italic;}
+.disc-title{font-size:.68rem;font-weight:700;letter-spacing:.1em;color:var(--purple);margin-bottom:.5rem;font-style:normal;}
+
+/* ── ERA RECONCILIATION ── */
+.era-container{background:var(--bg3);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:1.5rem;}
+.era-header{background:var(--panel);border-bottom:1px solid var(--border);padding:1rem 1.2rem;display:flex;align-items:center;justify-content:space-between;}
+.era-title{font-size:.95rem;font-weight:600;color:var(--white);}
+.era-sub{font-size:.72rem;color:var(--muted);font-family:var(--mono);margin-top:.1rem;}
+.era-badge{font-size:.65rem;font-weight:700;padding:.25rem .7rem;border-radius:4px;background:rgba(239,68,68,.2);color:#fca5a5;border:1px solid rgba(239,68,68,.3);}
+.era-table-wrap{overflow-x:auto;padding:1.2rem;}
+
+table.era-table{width:100%;border-collapse:collapse;font-size:.8rem;font-family:var(--mono);}
+.era-table th{background:var(--panel);padding:.6rem .9rem;text-align:left;font-size:.65rem;font-weight:700;letter-spacing:.08em;color:var(--muted);white-space:nowrap;border-bottom:1px solid var(--border);}
+.era-table td{padding:.65rem .9rem;border-bottom:1px solid var(--border);color:var(--white2);vertical-align:middle;}
+.era-table tr:last-child td{border-bottom:none;}
+.era-table tr.err-row td{background:rgba(239,68,68,.08);}
+.era-flag{display:inline-flex;align-items:center;gap:.3rem;background:rgba(239,68,68,.2);color:#fca5a5;font-size:.65rem;font-weight:700;padding:.15rem .5rem;border-radius:3px;border:1px solid rgba(239,68,68,.3);}
+.era-correct{color:var(--green);}
+
+/* QUESTIONS */
+.q-block{margin-bottom:1.2rem;}
+.q-label{font-size:.78rem;font-weight:600;color:var(--white);margin-bottom:.5rem;}
+.q-sub{font-size:.72rem;color:var(--muted);margin-bottom:.5rem;}
+.ans-area{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:.8rem;min-height:60px;font-family:'IBM Plex Sans',sans-serif;font-size:.82rem;color:var(--white);width:100%;resize:vertical;outline:none;transition:border-color .15s;}
+.ans-area:focus{border-color:var(--teal);}
+.ans-line{background:transparent;border:none;border-bottom:1px solid var(--border2);width:100%;padding:.4rem 0;color:var(--white);font-family:'IBM Plex Sans',sans-serif;font-size:.85rem;outline:none;transition:border-color .15s;}
+.ans-line:focus{border-color:var(--teal);}
+
+.ccma-tip{background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);border-radius:8px;padding:.9rem 1rem;font-size:.82rem;color:#c7d2fe;line-height:1.65;margin-top:1rem;}
+.ccma-tip strong{color:#a5b4fc;display:block;font-size:.68rem;letter-spacing:.1em;margin-bottom:.3rem;}
+
+/* ── CLAIM FLOW ── */
+.flow-track{display:flex;gap:0;margin-bottom:1.5rem;overflow-x:auto;}
+.flow-step{flex:1;min-width:120px;display:flex;flex-direction:column;align-items:center;position:relative;cursor:pointer;}
+.flow-step:not(:last-child)::after{content:'→';position:absolute;right:-12px;top:20px;color:var(--muted);font-size:1rem;z-index:1;}
+.flow-bubble{width:40px;height:40px;border-radius:50%;border:2px solid var(--border2);background:var(--panel);display:flex;align-items:center;justify-content:center;font-size:1rem;margin-bottom:.5rem;transition:all .2s;position:relative;z-index:1;}
+.flow-step.done .flow-bubble{border-color:var(--green);background:var(--green-dim);box-shadow:0 0 12px rgba(16,185,129,.3);}
+.flow-step.active-step .flow-bubble{border-color:var(--teal);background:var(--teal-dim);box-shadow:0 0 12px var(--teal-glow);}
+.flow-label{font-size:.65rem;text-align:center;color:var(--muted);font-weight:600;letter-spacing:.04em;line-height:1.3;}
+.flow-step.done .flow-label{color:var(--green);}
+.flow-step.active-step .flow-label{color:var(--teal);}
+
+.flow-detail{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.2rem;margin-bottom:1.2rem;}
+.fd-title{font-size:.9rem;font-weight:600;color:var(--white);margin-bottom:.4rem;display:flex;align-items:center;gap:.5rem;}
+.fd-body{font-size:.83rem;color:var(--white2);line-height:1.7;}
+.fd-steps{display:flex;flex-direction:column;gap:.5rem;margin-top:.8rem;}
+.fd-step{display:flex;align-items:flex-start;gap:.7rem;font-size:.82rem;color:var(--white2);}
+.fds-num{width:22px;height:22px;border-radius:50%;background:var(--teal);color:var(--bg);font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.fds-txt strong{color:var(--white);display:block;}
+
+.step-nav{display:flex;gap:.7rem;justify-content:flex-end;margin-top:1rem;}
+.btn-nav{padding:.55rem 1.2rem;border-radius:7px;border:1px solid var(--border2);background:var(--panel);color:var(--white2);font-family:'IBM Plex Sans',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s;}
+.btn-nav:hover{border-color:var(--teal);color:var(--teal);}
+.btn-nav.primary{background:var(--teal-dim);border-color:var(--teal);color:var(--teal);}
+.btn-nav.primary:hover{background:rgba(0,201,184,.25);}
+
+/* ── DENIAL TABLE ── */
+.denial-table-wrap{overflow-x:auto;margin-bottom:1.2rem;}
+table.denial-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.denial-table th{background:var(--panel);padding:.65rem 1rem;text-align:left;font-size:.68rem;font-weight:700;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--border);}
+.denial-table td{padding:.75rem 1rem;border-bottom:1px solid var(--border);vertical-align:top;}
+.denial-table tr:last-child td{border-bottom:none;}
+.denial-reason{color:#fca5a5;font-weight:600;}
+.denial-num{font-family:var(--mono);font-size:.75rem;color:var(--muted);width:30px;}
+.denial-fill{min-width:160px;}
+.denial-fill textarea{background:transparent;border:none;border-bottom:1px solid var(--border2);width:100%;font-family:'IBM Plex Sans',sans-serif;font-size:.8rem;color:var(--white);resize:none;outline:none;min-height:45px;padding:.2rem 0;transition:border-color .15s;}
+.denial-fill textarea:focus{border-color:var(--teal);}
+
+/* ── KNOWLEDGE CHECK ── */
+.kc-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+@media(max-width:640px){.kc-grid{grid-template-columns:1fr;}}
+.kc-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1rem;}
+.kc-num{font-family:var(--mono);font-size:.68rem;color:var(--teal);margin-bottom:.4rem;}
+.kc-q{font-size:.83rem;color:var(--white);line-height:1.55;margin-bottom:.6rem;font-weight:500;}
+
+/* ── PRINT STYLES ── */
+@media print{
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  body{background:#fff !important;color:#111 !important;font-size:10pt;padding:0;}
+  body::before,body::after{display:none !important;}
+  .statusbar,.tabs,.step-nav,.btn-nav,.print-btn-bar{display:none !important;}
+  .panel-section{display:block !important;margin-bottom:2rem;page-break-after:always;}
+  .panel-section:last-child{page-break-after:avoid;}
+  main{padding:0.5in 0.4in;max-width:100%;}
+  .code-grid,.kc-grid{grid-template-columns:1fr 1fr;}
+  .encounter-card,.era-container,.flow-detail,.disc-box,
+  .code-block,.watch-box,.scenario-box,.ccma-tip,
+  .patient-selector,.kc-card,.ph-stat{
+    background:#fff !important;border:1.5px solid #555 !important;
+    color:#111 !important;box-shadow:none !important;}
+  .ec-header,.era-header,.era-table th,.denial-table th{
+    background:#eee !important;color:#111 !important;}
+  .ph-title,.ph-title span,.ph-eyebrow,.ph-sub,.ec-patient,.ec-sub,
+  .era-title,.era-sub,.scenario-box,.scenario-title,.watch-title,.watch-text,
+  .code-desc,.cb-title,.code-qty,.disc-title,.disc-box,.q-label,.q-sub,
+  .fd-title,.fd-body,.fds-txt,.kc-num,.kc-q,.denial-reason,.denial-num,
+  .ps-name,.ps-meta,.sec-label,.ccma-tip,.ccma-tip strong,
+  .ph-stat strong,.ph-stat span,td,th,.task-item,.task-mod{color:#111 !important;}
+  .badge-icd{background:#cfe6ff !important;color:#003a7a !important;border:1px solid #003a7a !important;}
+  .badge-cpt{background:#d1f5e0 !important;color:#064e2b !important;border:1px solid #064e2b !important;}
+  .badge-hcpcs{background:#ede9fe !important;color:#4c1d95 !important;border:1px solid #4c1d95 !important;}
+  .ins-medicare{background:#cfe6ff !important;color:#003a7a !important;border:1px solid #003a7a !important;}
+  .ins-medicaid{background:#d1f5e0 !important;color:#064e2b !important;border:1px solid #064e2b !important;}
+  .ins-commercial{background:#e0e7ff !important;color:#1e1b5e !important;border:1px solid #1e1b5e !important;}
+  .ins-tricare{background:#ede9fe !important;color:#4c1d95 !important;border:1px solid #4c1d95 !important;}
+  .ins-workerscomp{background:#fef3c7 !important;color:#78350f !important;border:1px solid #78350f !important;}
+  .ins-hmo{background:#ccfbf1 !important;color:#064e3b !important;border:1px solid #064e3b !important;}
+  .ins-dual{background:#fae8ff !important;color:#701a75 !important;border:1px solid #701a75 !important;}
+  .ec-ins-badge{border:1px solid #555 !important;}
+  .era-table td,.era-table tr.err-row td{background:#fff !important;color:#111 !important;}
+  .era-table tr.err-row td{background:#fff5f5 !important;}
+  .era-flag{background:#fef2f2 !important;color:#b91c1c !important;border:1px solid #b91c1c !important;}
+  .watch-box{background:#fffbeb !important;border:1.5px solid #92400e !important;}
+  .watch-title{color:#92400e !important;}
+  .scenario-box{background:#f0fdfa !important;border:1.5px solid #0d9488 !important;}
+  .scenario-box .scenario-title,.scenario-box em{color:#0f766e !important;}
+  .ccma-tip{background:#eef2ff !important;border:1.5px solid #4338ca !important;}
+  .ccma-tip,.ccma-tip strong{color:#1e1b4b !important;}
+  .ans-area,.denial-fill textarea{
+    background:#fff !important;border:1.5px solid #888 !important;
+    color:#111 !important;min-height:50px;}
+  .ans-line{border-bottom:1.5px solid #888 !important;color:#111 !important;}
+  .task-item{background:#fff !important;border:1px solid #888 !important;color:#111 !important;}
+  .task-item.done{background:#f0fdf4 !important;color:#555 !important;}
+  .task-check{border:1.5px solid #555 !important;}
+  .flow-bubble{background:#fff !important;border:2px solid #555 !important;}
+  .flow-step.done .flow-bubble{background:#d1f5e0 !important;border-color:#064e2b !important;}
+  .flow-step.active-step .flow-bubble{background:#cfe6ff !important;border-color:#003a7a !important;}
+  .flow-label,.ps-name,.ps-meta{color:#111 !important;}
+  .ps-btn{background:#fff !important;border:1px solid #888 !important;}
+  .ps-btn.selected{background:#f0fdfa !important;border:1.5px solid #0d9488 !important;}
+  .code-row,.era-table td,.denial-table td{border-color:#ccc !important;}
+  .sec-label{color:#444 !important;}
+  .sec-label::after{background:#ccc !important;}
+  .panel-section::before{
+    content:attr(data-print-title);display:block;font-weight:700;font-size:12pt;
+    color:#111;border-bottom:2px solid #111;padding-bottom:4px;margin-bottom:12px;}
+}
+
+/* SCROLL */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg2);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--muted);}
+</style>
+</head>
+<body>
+
+<!-- STATUS BAR -->
+<div class="statusbar">
+  <div class="sb-left">
+    <a class="sb-logo" href="simclinic-hub.html">HSH</a>
+    <a class="sb-back" href="simclinic-hub.html">← Hub</a>
+    <span class="sb-section">BILLING &amp; CODING · MODULE 11</span>
+  </div>
+  <div class="sb-right">
+    <button onclick="window.print()" style="background:var(--teal-dim);border:1px solid var(--teal);color:var(--teal);font-family:'IBM Plex Sans',sans-serif;font-size:.72rem;font-weight:700;padding:.25rem .8rem;border-radius:5px;cursor:pointer;letter-spacing:.05em;transition:all .2s;" onmouseover="this.style.background='rgba(0,201,184,.25)'" onmouseout="this.style.background='var(--teal-dim)'">🖨 Print / Save PDF</button>
+    <span class="sb-time" id="clock">--:-- --</span>
+    <span class="sb-badge week">WEEK 15</span>
+  </div>
+</div>
+
+<main>
+
+  <div class="page-header">
+    <div class="ph-eyebrow">HealthSim Hub · SimClinic Desktop · Phase 3</div>
+    <div class="ph-title">Billing &amp; <span>Coding</span></div>
+    <div class="ph-sub">Code encounters · Submit claims · Reconcile remittance · Manage denials · Master the revenue cycle</div>
+    <div class="ph-stats">
+      <div class="ph-stat"><strong>6</strong><span>Practice Scenarios</span></div>
+      <div class="ph-stat"><strong>ICD-10 · CPT · HCPCS</strong><span>Code Sets Covered</span></div>
+      <div class="ph-stat"><strong>NHA CCMA Aligned</strong><span>Module 11</span></div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('encounters')" id="tab-encounters">
+      <span class="tab-icon">🩺</span> Encounter Coding
+    </button>
+    <button class="tab" onclick="showTab('era')" id="tab-era">
+      <span class="tab-icon">📋</span> ERA Reconciliation
+    </button>
+    <button class="tab" onclick="showTab('claims')" id="tab-claims">
+      <span class="tab-icon">📤</span> Claim Submission Flow
+    </button>
+    <button class="tab" onclick="showTab('denials')" id="tab-denials">
+      <span class="tab-icon">⛔</span> Denial Decision Tree
+    </button>
+    <button class="tab" onclick="showTab('check')" id="tab-check">
+      <span class="tab-icon">✏️</span> Knowledge Check
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!--  TAB 1 — ENCOUNTER CODING                         -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <div class="panel-section active" id="panel-encounters" data-print-title="Week 15 — Encounter Coding (Module 11 · NHA CCMA)">
+
+    <div class="sec-label">Select a Patient to Code</div>
+
+    <div class="patient-selector">
+      <div class="ps-label">SELECT PATIENT — WEEK 15 SCENARIO ROSTER</div>
+      <div class="ps-grid">
+        <button class="ps-btn selected" onclick="selectPatient(0)" id="ps-0">
+          <span class="ps-name">Angela Brooks</span>
+          <span class="ps-meta">HSH-0007 · Age 45 · Dr. Walsh</span>
+          <span class="ps-ins ins-medicare">Medicare Advantage</span>
+        </button>
+        <button class="ps-btn" onclick="selectPatient(1)" id="ps-1">
+          <span class="ps-name">Marcus Webb</span>
+          <span class="ps-meta">HSH-0041 · Age 52 · Dr. Evans</span>
+          <span class="ps-ins ins-medicare">Medicare Part B</span>
+        </button>
+        <button class="ps-btn" onclick="selectPatient(2)" id="ps-2">
+          <span class="ps-name">Sofia Martinez</span>
+          <span class="ps-meta">HSH-0004 · Age 22 · Dr. Nguyen</span>
+          <span class="ps-ins ins-commercial">Aetna Student Plan</span>
+        </button>
+        <button class="ps-btn" onclick="selectPatient(3)" id="ps-3">
+          <span class="ps-name">Michael Turner</span>
+          <span class="ps-meta">HSH-0006 · Age 34 · Dr. Evans</span>
+          <span class="ps-ins ins-workerscomp">Workers' Comp</span>
+        </button>
+        <button class="ps-btn" onclick="selectPatient(4)" id="ps-4">
+          <span class="ps-name">James Kowalski</span>
+          <span class="ps-meta">HSH-0015 · Age 51 · Dr. Evans</span>
+          <span class="ps-ins ins-tricare">Tricare Prime</span>
+        </button>
+        <button class="ps-btn" onclick="selectPatient(5)" id="ps-5">
+          <span class="ps-name">Evelyn Carter</span>
+          <span class="ps-meta">HSH-0016 · Age 71 · Dr. Lee</span>
+          <span class="ps-ins ins-dual">Dual Eligible</span>
+        </button>
+      </div>
+      <div class="code-legend" style="margin-top:.8rem;padding-top:.7rem;border-top:1px solid var(--border);">
+        <span style="font-size:.68rem;font-weight:700;color:var(--muted);letter-spacing:.05em;">CODE BADGE KEY:</span>
+        <span class="cl-item"><span class="code-badge badge-icd">ICD</span> Diagnosis code (ICD-10-CM) — blue, left bar</span>
+        <span class="cl-item"><span class="code-badge badge-cpt">CPT</span> Procedure code (CPT) — green, top bar</span>
+        <span class="cl-item"><span class="code-badge badge-hcpcs">HCPCS</span> Supply/drug code (HCPCS) — purple, dashed border</span>
+      </div>
+    </div>
+
+    <!-- Encounter cards — shown/hidden by JS -->
+    <div id="enc-0">
+      <div class="encounter-card">
+        <div class="ec-header">
+          <div>
+            <div class="ec-patient">👩🏽 Angela Brooks <span class="ec-ins-badge ins-medicare">Medicare Advantage</span></div>
+            <div class="ec-sub">HSH-0007 · DOB: 01/27/1979 · Age 45 · Dr. Walsh · Deductible fully met</div>
+          </div>
+        </div>
+        <div class="ec-body">
+          <div class="scenario-box">
+            <div class="scenario-title">📋 THE SCENARIO</div>
+            Angela is a 45-year-old <em>established patient</em> presenting today for her diabetes follow-up. She also has a non-healing wound on her right foot for three weeks — the provider documented poor healing related to her Type 2 Diabetes. Provider performs <em>active wound debridement (CPT 97597)</em> today and documents both diagnoses. Angela pays her copay at checkout. Her deductible has been fully met.
+          </div>
+          <div class="watch-box">
+            <div class="watch-title">⚠ WATCH FOR</div>
+            <div class="watch-text">Both diagnoses must be coded — the diabetes AND the wound. Code linkage is critical: the diabetes diagnosis supports why the wound is not healing and why debridement is medically necessary. Because debridement is a <strong>separately identifiable service</strong> from the E/M visit, modifier -25 is appended to the E/M code. Verify Medicare Advantage eligibility day-of-visit. Copay must be collected and posted in EMR — never place in petty cash.</div>
+          </div>
+          <div class="code-grid">
+            <div class="code-block">
+              <div class="cb-title">🔢 ICD-10-CM Diagnoses</div>
+              <div class="code-row"><span class="code-badge badge-icd">ICD</span><span class="code-desc">E11.621 — T2D with foot ulcer, right</span></div>
+              <div class="code-row"><span class="code-badge badge-icd">ICD</span><span class="code-desc">L97.519 — Non-pressure chronic ulcer, right foot, unspecified</span></div>
+            </div>
+            <div class="code-block">
+              <div class="cb-title">⚙️ CPT Procedures</div>
+              <div class="code-row"><span class="code-badge badge-cpt">CPT</span><span class="code-desc">99213-25 — E/M established, low complexity + mod 25</span></div>
+              <div class="code-row"><span class="code-badge badge-cpt">CPT</span><span class="code-desc">97597 — Debridement, open wound, first 20 cm²</span></div>
+            </div>
+          </div>
+          <div class="sec-label">Your Task Checklist</div>
+          <div class="task-list" id="tasks-0">
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Verify Medicare Advantage eligibility in EMR before encounter is coded</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Confirm Angela is an ESTABLISHED patient — check last visit date in EMR</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Assign both ICD-10-CM codes — T2D with foot ulcer AND chronic ulcer detail</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Assign CPT 99213-25 (established E/M + modifier 25 for debridement visit)</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Assign CPT 97597 for wound debridement — verify it is &lt;20cm²</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Link both diagnoses to both procedure codes in the EMR billing section</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Collect copay — post in EMR, issue receipt</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Submit claim electronically via EMR billing section</div>
+          </div>
+          <div class="disc-box">
+            <div class="disc-title">💬 DISCUSSION QUESTION</div>
+            Why is modifier -25 required when billing both an E/M visit (99213) AND the wound debridement (97597) on the same day? What would happen to the claim if you forgot the modifier?
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="enc-1" style="display:none">
+      <div class="encounter-card">
+        <div class="ec-header">
+          <div>
+            <div class="ec-patient">👨🏿 Marcus Webb <span class="ec-ins-badge ins-medicare">Medicare Part B</span></div>
+            <div class="ec-sub">HSH-0041 · DOB: 03/14/1973 · Age 52 · Dr. Evans · Deductible NOT met</div>
+          </div>
+        </div>
+        <div class="ec-body">
+          <div class="scenario-box">
+            <div class="scenario-title">📋 THE SCENARIO</div>
+            Marcus is a 52-year-old presenting for his <em>first visit</em> to this clinic. He has T2D and hypertension that are not well-controlled — his A1C is 9.2. The provider performs a detailed history, comprehensive exam, and moderate-complexity medical decision making. A referral to Endocrinology has been placed — prior authorization is required before he can be seen. Marcus has <em>Medicare Part B — outpatient visit</em>. Copay is $20.
+          </div>
+          <div class="watch-box">
+            <div class="watch-title">⚠ WATCH FOR</div>
+            <div class="watch-text">Marcus is a <strong>NEW patient</strong> — this is his first visit to this clinic. You must use a new patient E/M code (99203 or 99204), NOT an established patient code (99213/99214). This is one of the most commonly missed distinctions on the CCMA exam. Medicare Part B covers outpatient office visits — confirm this is NOT a Part A service. Prior auth must be in place before the Endo referral appointment.</div>
+          </div>
+          <div class="code-grid">
+            <div class="code-block">
+              <div class="cb-title">🔢 ICD-10-CM Diagnoses</div>
+              <div class="code-row"><span class="code-badge badge-icd">ICD</span><span class="code-desc">E11.65 — T2D with hyperglycemia (A1C 9.2)</span></div>
+              <div class="code-row"><span class="code-badge badge-icd">ICD</span><span class="code-desc">I10 — Essential (primary) hypertension</span></div>
+            </div>
+            <div class="code-block">
+              <div class="cb-title">⚙️ CPT Procedures</div>
+              <div class="code-row"><span class="code-badge badge-cpt">CPT</span><span class="code-desc">99204 — New patient E/M, moderate complexity MDM</span></div>
+            </div>
+          </div>
+          <div class="sec-label">Your Task Checklist</div>
+          <div class="task-list" id="tasks-1">
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Verify Medicare Part B eligibility in EMR — confirm outpatient coverage</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Confirm Marcus is a NEW patient — no visits in past 3 years to this provider/group</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Assign ICD-10-CM for both diagnoses — T2D with hyperglycemia AND HTN</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Assign NEW patient E/M code (99203 or 99204) — NOT 99213 or 99214</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Verify both diagnoses support the level of service — code linkage</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Document prior auth referral for Endocrinology — flag auth pending in EMR</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Collect $20 copay — post in EMR, issue receipt</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Submit claim electronically; generate patient statement after ERA posts</div>
+          </div>
+          <div class="disc-box">
+            <div class="disc-title">💬 DISCUSSION QUESTION</div>
+            What would happen if you used CPT 99213 (established patient) instead of 99204 (new patient) for Marcus? How does this affect the claim — and the clinic's reimbursement? How does the "3-year rule" apply here?
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="enc-2" style="display:none">
+      <div class="encounter-card">
+        <div class="ec-header">
+          <div>
+            <div class="ec-patient">👩🏻 Sofia Martinez <span class="ec-ins-badge ins-commercial">Aetna Student Plan</span></div>
+            <div class="ec-sub">HSH-0004 · DOB: 11/05/2002 · Age 22 · Dr. Nguyen · $10 copay · Deductible NOT met</div>
+          </div>
+        </div>
+        <div class="ec-body">
+          <div class="scenario-box">
+            <div class="scenario-title">📋 THE SCENARIO</div>
+            Sofia is a 22-year-old presenting for her scheduled Depo-Provera injection — this is her <em>third injection visit</em>. The provider orders medroxyprogesterone acetate 150 mg IM. The MA administers the injection in the left deltoid. No adverse reactions. Sofia has Aetna Student Health Plan. This encounter requires <em>two separate codes</em> — one for the drug (HCPCS J1050 × 150 units) and one for the administration (CPT 96372). Both are required for the claim to be complete and reimbursed.
+          </div>
+          <div class="watch-box">
+            <div class="watch-title">⚠ WATCH FOR</div>
+            <div class="watch-text">This encounter requires TWO codes — the HCPCS J code for the medication AND the CPT code for the injection administration. Posting only one code leaves the claim incomplete and reimbursement is lost. <strong>J1050 is billed per mg</strong> — Sofia received 150 mg, so Qty = 150. CPT 96372 covers the therapeutic IM injection (subsequent — this is her 3rd visit). Verify Aetna eligibility and confirm student plan is still active. Student plans are verified annually.</div>
+          </div>
+          <div class="code-grid">
+            <div class="code-block">
+              <div class="cb-title">🔢 ICD-10-CM Diagnoses</div>
+              <div class="code-row"><span class="code-badge badge-icd">ICD</span><span class="code-desc">Z30.42 — Encounter for injectable contraceptive management</span></div>
+            </div>
+            <div class="code-block">
+              <div class="cb-title">⚙️ CPT + HCPCS Procedures</div>
+              <div class="code-row"><span class="code-badge badge-hcpcs">HCPCS</span><span class="code-desc">J1050 — Medroxyprogesterone acetate, per mg</span><span class="code-qty">Qty: 150</span></div>
+              <div class="code-row"><span class="code-badge badge-cpt">CPT</span><span class="code-desc">96372 — Therapeutic/prophylactic IM injection</span><span class="code-qty">Qty: 1</span></div>
+            </div>
+          </div>
+          <div class="sec-label">Your Task Checklist</div>
+          <div class="task-list" id="tasks-2">
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Verify Aetna Student Health Plan eligibility — confirm plan is still active</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Identify the correct HCPCS J code: J1050 for medroxyprogesterone acetate</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Enter Qty 150 for J1050 (drug is billed per 1 mg; 150 mg administered = 150 units)</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Identify the CPT administration code: 96372 (therapeutic/prophylactic IM, subsequent)</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Enter BOTH J1050 and 96372 in the EMR — verify both appear on the claim preview</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Link ICD-10 Z30.42 to both procedure codes — diagnosis supports medical necessity</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Collect $10 copay — post in EMR, issue receipt</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Submit claim to Aetna via EMR billing section</div>
+          </div>
+          <div class="disc-box">
+            <div class="disc-title">💬 DISCUSSION QUESTION</div>
+            Why are two separate codes required for Sofia's injection — one HCPCS (J1050) and one CPT (96372)? What would happen to reimbursement if you only submitted J1050 and left out CPT 96372? Why does the drug quantity matter?
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="enc-3" style="display:none">
+      <div class="encounter-card">
+        <div class="ec-header">
+          <div>
+            <div class="ec-patient">👨🏽 Michael Turner <span class="ec-ins-badge ins-workerscomp">Workers' Compensation</span></div>
+            <div class="ec-sub">HSH-0006 · DOB: 07/09/1990 · Age 34 · Dr. Evans · WC Case #WC332211</div>
+          </div>
+        </div>
+        <div class="ec-body">
+          <div class="scenario-box">
+            <div class="scenario-title">📋 THE SCENARIO</div>
+            Michael is a 34-year-old presenting for a follow-up related to a work-related injury (right wrist strain sustained on the job). He has an active Workers' Compensation claim. <em>Do NOT bill his personal insurance</em> — all charges go to the WC carrier only. The provider documents a follow-up E/M visit with moderate complexity. Michael does not owe a copay — WC patients are never asked to pay. Confirm adjuster name and WC claim number before submitting.
+          </div>
+          <div class="watch-box">
+            <div class="watch-title">⚠ WATCH FOR</div>
+            <div class="watch-text">Workers' Compensation is billed to the WC carrier — <strong>never to the patient or their personal insurance</strong>. There is no patient responsibility. The WC case number and adjuster contact are required on the claim. Michael should <strong>never be asked to pay</strong> for WC-covered services. Time requirements for filing WC claims vary by state — check the carrier's guidelines.</div>
+          </div>
+          <div class="code-grid">
+            <div class="code-block">
+              <div class="cb-title">🔢 ICD-10-CM Diagnoses</div>
+              <div class="code-row"><span class="code-badge badge-icd">ICD</span><span class="code-desc">M79.631 — Pain in right forearm (work injury)</span></div>
+              <div class="code-row"><span class="code-badge badge-icd">ICD</span><span class="code-desc">Z57.5 — Exposure to risk factors — toxic agents at work</span></div>
+            </div>
+            <div class="code-block">
+              <div class="cb-title">⚙️ CPT Procedures</div>
+              <div class="code-row"><span class="code-badge badge-cpt">CPT</span><span class="code-desc">99213 — Established E/M, low complexity (WC follow-up)</span></div>
+            </div>
+          </div>
+          <div class="sec-label">Your Task Checklist</div>
+          <div class="task-list" id="tasks-3">
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Obtain and verify WC case number and adjuster contact before visit</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Confirm injury is covered under active WC claim — match date of injury</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Assign ICD-10-CM codes specific to the workplace injury and injury site</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Assign correct E/M CPT code based on provider documentation</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Bill to WC carrier ONLY — do NOT bill personal insurance or patient</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Do NOT collect copay — Workers' Comp patients owe $0 for covered services</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Submit claim to WC carrier with required case number and adjuster info</div>
+          </div>
+          <div class="disc-box">
+            <div class="disc-title">💬 DISCUSSION QUESTION</div>
+            Why is it never appropriate to bill Michael's personal insurance for this Workers' Compensation visit? What would happen if you billed both the WC carrier and his personal insurance for the same visit? What are the legal and ethical implications?
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="enc-4" style="display:none">
+      <div class="encounter-card">
+        <div class="ec-header">
+          <div>
+            <div class="ec-patient">👨🏻 James Kowalski <span class="ec-ins-badge ins-tricare">Tricare Prime</span></div>
+            <div class="ec-sub">HSH-0015 · DOB: 11/08/1972 · Age 51 · Dr. Evans · Pre-Op · ⚠ CRITICAL ALLERGY: Iodine/Contrast Dye</div>
+          </div>
+        </div>
+        <div class="ec-body">
+          <div class="scenario-box">
+            <div class="scenario-title">📋 THE SCENARIO</div>
+            James is a 51-year-old presenting for a pre-operative clearance visit before a scheduled cholecystectomy. He has a critical allergy to iodine/contrast dye — the surgical team has been alerted. The provider performs a comprehensive pre-op evaluation. <em>TRICARE Prime</em> covers this as an outpatient pre-op visit. Confirm authorization before the OR date. James has a $0 copay under Tricare Prime for most services.
+          </div>
+          <div class="watch-box">
+            <div class="watch-title">⚠ WATCH FOR — CRITICAL ALLERGY ALERT</div>
+            <div class="watch-text"><strong style="color:#fca5a5;">🚨 Iodine/Contrast Dye — Anaphylaxis Risk.</strong> This must be documented, flagged in the EMR allergy field, AND communicated verbally to the surgical team before OR clearance is given. TRICARE Prime requires referrals and authorizations — confirm the cholecystectomy authorization is in place. Do not proceed to OR without confirmed auth.</div>
+          </div>
+          <div class="code-grid">
+            <div class="code-block">
+              <div class="cb-title">🔢 ICD-10-CM Diagnoses</div>
+              <div class="code-row"><span class="code-badge badge-icd">ICD</span><span class="code-desc">K80.20 — Calculus of gallbladder w/o acute cholecystitis</span></div>
+              <div class="code-row"><span class="code-badge badge-icd">ICD</span><span class="code-desc">Z01.818 — Pre-procedural exam before other procedure</span></div>
+              <div class="code-row"><span class="code-badge badge-icd">ICD</span><span class="code-desc">Z88.5 — Allergy to iodine (anaphylactic)</span></div>
+            </div>
+            <div class="code-block">
+              <div class="cb-title">⚙️ CPT Procedures</div>
+              <div class="code-row"><span class="code-badge badge-cpt">CPT</span><span class="code-desc">99213 — Established E/M, pre-op clearance</span></div>
+            </div>
+          </div>
+          <div class="sec-label">Your Task Checklist</div>
+          <div class="task-list" id="tasks-4">
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>🚨 Flag iodine/contrast dye allergy in EMR and alert surgical team immediately</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Verify TRICARE Prime eligibility and confirm authorization for cholecystectomy</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Assign ICD-10-CM codes — cholecystitis, pre-op exam, AND allergy code</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Assign CPT 99213 for established patient E/M pre-op visit</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Document surgical clearance note in EMR — include allergy alert in notes</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Submit claim to TRICARE Prime with authorization number on claim</div>
+          </div>
+          <div class="disc-box">
+            <div class="disc-title">💬 DISCUSSION QUESTION</div>
+            Why is the allergy code Z88.5 important to include on this claim? Beyond billing, what is the MA's responsibility when a critical allergy like iodine/contrast dye is identified before a surgical procedure?
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="enc-5" style="display:none">
+      <div class="encounter-card">
+        <div class="ec-header">
+          <div>
+            <div class="ec-patient">👩🏾 Evelyn Carter <span class="ec-ins-badge ins-dual">Dual Eligible — Medicare + Medicaid</span></div>
+            <div class="ec-sub">HSH-0016 · DOB: 03/17/1953 · Age 71 · Dr. Lee · Patient owes $0 — Bill Medicare FIRST</div>
+          </div>
+        </div>
+        <div class="ec-body">
+          <div class="scenario-box">
+            <div class="scenario-title">📋 THE SCENARIO</div>
+            Evelyn is a 71-year-old with T2D and CHF presenting for a follow-up visit. She is <em>dual eligible</em> — she has both Medicare (primary) AND Medicaid (secondary). The correct billing order matters: <em>bill Medicare first</em>, then Medicaid picks up the remaining patient responsibility. Evelyn owes $0 out-of-pocket. The provider performs an established E/M visit, low complexity.
+          </div>
+          <div class="watch-box">
+            <div class="watch-title">⚠ WATCH FOR</div>
+            <div class="watch-text"><strong>Billing order is critical for dual-eligible patients.</strong> Always bill Medicare FIRST. After Medicare processes the claim and posts the EOB/ERA, bill Medicaid as secondary for any remaining patient responsibility. Evelyn should never be charged a copay or coinsurance — Medicaid covers all cost-sharing. If you bill Medicaid first, the claim will be denied.</div>
+          </div>
+          <div class="code-grid">
+            <div class="code-block">
+              <div class="cb-title">🔢 ICD-10-CM Diagnoses</div>
+              <div class="code-row"><span class="code-badge badge-icd">ICD</span><span class="code-desc">E11.9 — T2D without complications, follow-up</span></div>
+              <div class="code-row"><span class="code-badge badge-icd">ICD</span><span class="code-desc">I50.9 — Heart failure, unspecified (CHF)</span></div>
+            </div>
+            <div class="code-block">
+              <div class="cb-title">⚙️ CPT Procedures</div>
+              <div class="code-row"><span class="code-badge badge-cpt">CPT</span><span class="code-desc">99213 — Established E/M, low complexity</span></div>
+            </div>
+          </div>
+          <div class="sec-label">Your Task Checklist</div>
+          <div class="task-list" id="tasks-5">
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Verify BOTH Medicare and Medicaid eligibility in EMR</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Confirm billing sequence: Medicare PRIMARY, Medicaid SECONDARY</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Assign ICD-10-CM codes for T2D and CHF — both active conditions</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Assign CPT 99213 for established E/M visit, low complexity</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Do NOT collect copay — Evelyn owes $0; Medicaid covers all cost-sharing</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>Submit claim to Medicare FIRST — wait for ERA before billing Medicaid</div>
+            <div class="task-item" onclick="toggleTask(this)"><div class="task-check"></div><span class="task-mod">MOD 11</span>After Medicare ERA posts, crossover bill to Medicaid for $0 patient balance</div>
+          </div>
+          <div class="disc-box">
+            <div class="disc-title">💬 DISCUSSION QUESTION</div>
+            Why must Medicare always be billed first for a dual-eligible patient? What is a "crossover claim" and when does it occur? What happens to the claim if Medicaid is accidentally billed first?
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /panel-encounters -->
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!--  TAB 2 — ERA RECONCILIATION                        -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <div class="panel-section" id="panel-era" data-print-title="Week 15 — ERA Reconciliation Worksheet (Module 11 · NHA CCMA)">
+
+    <div class="sec-label">ERA Reconciliation Worksheet — Angela Brooks (HSH-0007)</div>
+
+    <div class="era-container">
+      <div class="era-header">
+        <div>
+          <div class="era-title">Electronic Remittance Advice — Angela Brooks</div>
+          <div class="era-sub">Medicare Advantage · Date of Service: Today · Auto-Posted</div>
+        </div>
+        <div class="era-badge">⚠ 1 Error Detected</div>
+      </div>
+      <div class="era-table-wrap">
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:1rem;line-height:1.6;">
+          The ERA below was auto-posted to Angela Brooks' account. Review each line carefully. <strong style="color:var(--gold);">One line has an auto-post error</strong> — the contractual adjustment was not applied correctly. Find the error, correct the math, and calculate the true patient responsibility.
+        </div>
+        <table class="era-table">
+          <thead>
+            <tr>
+              <th>DATE</th><th>CPT CODE</th><th>BILLED</th><th>ALLOWED</th>
+              <th>ADJUSTMENT</th><th>PAYER PAID</th><th>COPAY</th><th>COINSURANCE</th><th>PT RESPONSIBILITY</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Today</td><td>99213-25</td><td>$85.00</td><td>$75.00</td>
+              <td>$10.00</td><td>$60.00</td><td>$15.00</td><td>—</td><td>$15.00</td>
+            </tr>
+            <tr class="err-row">
+              <td>Today</td><td>97597</td><td>$145.00</td><td>$90.00</td>
+              <td><span class="era-flag">$0.00 ⚠</span></td><td>$72.00</td><td>—</td><td>$18.00</td><td>$73.00</td>
+            </tr>
+            <tr>
+              <td>Today</td><td>99213-25</td><td>$50.00</td><td>$50.00</td>
+              <td>$0.00</td><td>$40.00</td><td>—</td><td>$10.00</td><td>$10.00</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="q-block">
+          <div class="q-label">1. Which CPT code line has an error? What is the problem?</div>
+          <div class="q-sub">Hint: Look at the billed amount vs. the allowed amount vs. the adjustment column.</div>
+          <textarea class="ans-area" rows="2" placeholder="Write your answer here…"></textarea>
+        </div>
+        <div class="q-block">
+          <div class="q-label">2. Calculate the correct contractual adjustment for CPT 97597.</div>
+          <div class="q-sub">Formula: Billed Amount – Allowed Amount = Contractual Adjustment</div>
+          <input class="ans-line" type="text" placeholder="$145.00 − $90.00 = $___">
+        </div>
+        <div class="q-block">
+          <div class="q-label">3. After correcting the adjustment, what is the TRUE patient responsibility for CPT 97597?</div>
+          <div class="q-sub">Formula: Allowed Amount – Payer Paid – Copay/Coinsurance = Patient Responsibility</div>
+          <input class="ans-line" type="text" placeholder="$90.00 − $72.00 − $18.00 = $___">
+        </div>
+        <div class="q-block">
+          <div class="q-label">4. What is the corrected TOTAL patient responsibility for Angela's entire visit?</div>
+          <input class="ans-line" type="text" placeholder="$15.00 + $___ + $10.00 = $___">
+        </div>
+        <div class="q-block">
+          <div class="q-label">5. What action do you take in the EMR to correct this error? What do you document?</div>
+          <textarea class="ans-area" rows="3" placeholder="Describe your steps to fix the auto-post error in the billing application…"></textarea>
+        </div>
+        <div class="q-block">
+          <div class="q-label">6. Why does this error matter before you generate Angela's patient statement?</div>
+          <textarea class="ans-area" rows="2" placeholder="Explain what would happen if you generated the statement with the uncorrected error…"></textarea>
+        </div>
+        <div class="ccma-tip">
+          <strong>💡 CCMA EXAM TIP</strong>
+          The ERA auto-post feature saves time but can post incorrect adjustments when contracted rates aren't loaded correctly in the PM system. Always compare the ERA to the original claim line-by-line before generating a patient statement. Key formula: <strong>Billed − Allowed = Contractual Adjustment. Allowed − Payer Paid − Cost-Sharing = Patient Responsibility.</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Second ERA scenario -->
+    <div class="sec-label">ERA Reconciliation — Marcus Webb (HSH-0041) — Aging Report</div>
+    <div class="era-container">
+      <div class="era-header">
+        <div>
+          <div class="era-title">A/R Aging Report — Understanding Delinquent Accounts</div>
+          <div class="era-sub">Review the aging buckets and determine next steps for each account</div>
+        </div>
+      </div>
+      <div class="era-table-wrap">
+        <table class="era-table">
+          <thead>
+            <tr><th>PATIENT</th><th>MRN</th><th>BALANCE</th><th>0–30 DAYS</th><th>31–60 DAYS</th><th>61–90 DAYS</th><th>90+ DAYS</th><th>STATUS</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Marcus Webb</td><td>HSH-0041</td><td>$240.00</td><td>$240.00</td><td>—</td><td>—</td><td>—</td><td style="color:var(--green)">Current</td></tr>
+            <tr><td>Angela Brooks</td><td>HSH-0007</td><td>$28.00</td><td>—</td><td>$28.00</td><td>—</td><td>—</td><td style="color:var(--gold)">Send Statement</td></tr>
+            <tr><td>Harold Simmons</td><td>HSH-0010</td><td>$95.00</td><td>—</td><td>—</td><td>$95.00</td><td>—</td><td style="color:var(--orange)">Call Patient</td></tr>
+            <tr class="err-row"><td>Carol White</td><td>HSH-0009</td><td>$312.00</td><td>—</td><td>—</td><td>—</td><td>$312.00</td><td style="color:var(--red)">⚠ Collections Risk</td></tr>
+          </tbody>
+        </table>
+        <div class="q-block" style="margin-top:1.2rem;">
+          <div class="q-label">Based on the aging report above, describe what action the MA/billing team should take for each patient and explain the reasoning.</div>
+          <textarea class="ans-area" rows="5" placeholder="Marcus Webb (0–30 days): …&#10;Angela Brooks (31–60 days): …&#10;Harold Simmons (61–90 days): …&#10;Carol White (90+ days): …"></textarea>
+        </div>
+        <div class="ccma-tip">
+          <strong>💡 CCMA EXAM TIP</strong>
+          Aging buckets: <strong>0–30 days = Current</strong> (no action needed yet). <strong>31–60 days = Send statement</strong>. <strong>61–90 days = Phone call or second statement</strong>. <strong>91+ days = Severely delinquent</strong> — internal collections or transfer to external collections agency. Accounts over 91 days typically go to collections if no payment arrangements have been made.
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /panel-era -->
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!--  TAB 3 — CLAIM SUBMISSION FLOW                    -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <div class="panel-section" id="panel-claims" data-print-title="Week 15 — Claim Submission Flow (Module 11 · NHA CCMA)">
+
+    <div class="sec-label">Revenue Cycle — Claim Submission Workflow</div>
+
+    <div class="flow-track" id="flow-track">
+      <div class="flow-step done active-step" id="fstep-0" onclick="showFlowStep(0)">
+        <div class="flow-bubble">✅</div>
+        <div class="flow-label">Patient<br>Registration</div>
+      </div>
+      <div class="flow-step" id="fstep-1" onclick="showFlowStep(1)">
+        <div class="flow-bubble">🛡</div>
+        <div class="flow-label">Insurance<br>Verification</div>
+      </div>
+      <div class="flow-step" id="fstep-2" onclick="showFlowStep(2)">
+        <div class="flow-bubble">🩺</div>
+        <div class="flow-label">Encounter &amp;<br>Documentation</div>
+      </div>
+      <div class="flow-step" id="fstep-3" onclick="showFlowStep(3)">
+        <div class="flow-bubble">🔢</div>
+        <div class="flow-label">Coding the<br>Visit</div>
+      </div>
+      <div class="flow-step" id="fstep-4" onclick="showFlowStep(4)">
+        <div class="flow-bubble">📤</div>
+        <div class="flow-label">Submit<br>Claim</div>
+      </div>
+      <div class="flow-step" id="fstep-5" onclick="showFlowStep(5)">
+        <div class="flow-bubble">📋</div>
+        <div class="flow-label">Receive<br>ERA / EOB</div>
+      </div>
+      <div class="flow-step" id="fstep-6" onclick="showFlowStep(6)">
+        <div class="flow-bubble">💲</div>
+        <div class="flow-label">Patient<br>Statement</div>
+      </div>
+    </div>
+
+    <div class="flow-detail" id="flow-detail"></div>
+
+    <div class="step-nav">
+      <button class="btn-nav" onclick="prevFlowStep()">← Previous</button>
+      <button class="btn-nav primary" onclick="nextFlowStep()">Next Step →</button>
+    </div>
+
+    <div class="ccma-tip" style="margin-top:1.5rem;">
+      <strong>💡 CCMA EXAM TIP — CLEAN CLAIM</strong>
+      A "clean claim" has no demographic or insurance errors AND accurately links ICD-10-CM diagnosis codes to the appropriate CPT/HCPCS codes to support medical necessity. Claims should be submitted daily — delays of even one week can cascade into 2–3 week payment delays. When a claim is rejected by the clearinghouse, correct immediately. When a claim is denied by the payer, review the reason code and appeal if appropriate.
+    </div>
+
+  </div><!-- /panel-claims -->
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!--  TAB 4 — DENIAL DECISION TREE                     -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <div class="panel-section" id="panel-denials" data-print-title="Week 15 — Denial Decision Tree (Module 11 · NHA CCMA)">
+
+    <div class="sec-label">Denied Claim Decision Tree — What To Do When Claims Come Back</div>
+
+    <div class="era-container">
+      <div class="era-header">
+        <div>
+          <div class="era-title">Denial Response Worksheet</div>
+          <div class="era-sub">For each denial reason — write your next step AND explain why. Use your notes and the NHA resources.</div>
+        </div>
+      </div>
+      <div class="era-table-wrap">
+        <div class="denial-table-wrap">
+          <table class="denial-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>DENIAL REASON FROM PAYER</th>
+                <th>YOUR NEXT STEP</th>
+                <th>WHY THIS STEP?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="denial-num">1</td>
+                <td><span class="denial-reason">"Lack of medical necessity"</span></td>
+                <td class="denial-fill"><textarea rows="3" placeholder="Next step…"></textarea></td>
+                <td class="denial-fill"><textarea rows="3" placeholder="Reasoning…"></textarea></td>
+              </tr>
+              <tr>
+                <td class="denial-num">2</td>
+                <td><span class="denial-reason">"Incorrect date of birth"</span></td>
+                <td class="denial-fill"><textarea rows="3" placeholder="Next step…"></textarea></td>
+                <td class="denial-fill"><textarea rows="3" placeholder="Reasoning…"></textarea></td>
+              </tr>
+              <tr>
+                <td class="denial-num">3</td>
+                <td><span class="denial-reason">"Patient not eligible on date of service"</span></td>
+                <td class="denial-fill"><textarea rows="3" placeholder="Next step…"></textarea></td>
+                <td class="denial-fill"><textarea rows="3" placeholder="Reasoning…"></textarea></td>
+              </tr>
+              <tr>
+                <td class="denial-num">4</td>
+                <td><span class="denial-reason">"Duplicate claim submission"</span></td>
+                <td class="denial-fill"><textarea rows="3" placeholder="Next step…"></textarea></td>
+                <td class="denial-fill"><textarea rows="3" placeholder="Reasoning…"></textarea></td>
+              </tr>
+              <tr>
+                <td class="denial-num">5</td>
+                <td><span class="denial-reason">"Invalid procedure code"</span></td>
+                <td class="denial-fill"><textarea rows="3" placeholder="Next step…"></textarea></td>
+                <td class="denial-fill"><textarea rows="3" placeholder="Reasoning…"></textarea></td>
+              </tr>
+              <tr>
+                <td class="denial-num">6</td>
+                <td><span class="denial-reason">"Authorization not on file"</span></td>
+                <td class="denial-fill"><textarea rows="3" placeholder="Next step…"></textarea></td>
+                <td class="denial-fill"><textarea rows="3" placeholder="Reasoning…"></textarea></td>
+              </tr>
+              <tr>
+                <td class="denial-num">7</td>
+                <td><span class="denial-reason">"Service not covered by plan"</span></td>
+                <td class="denial-fill"><textarea rows="3" placeholder="Next step…"></textarea></td>
+                <td class="denial-fill"><textarea rows="3" placeholder="Reasoning…"></textarea></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="q-block">
+          <div class="q-label">What is a clearinghouse and what role does it play before a claim reaches the payer?</div>
+          <textarea class="ans-area" rows="2" placeholder="Define clearinghouse and explain its function in the claims process…"></textarea>
+        </div>
+        <div class="q-block">
+          <div class="q-label">What is the difference between a claim <em>rejection</em> and a claim <em>denial</em>? Give an example of each.</div>
+          <textarea class="ans-area" rows="3" placeholder="Rejection: …  Denial: …"></textarea>
+        </div>
+
+        <div class="ccma-tip">
+          <strong>💡 CCMA EXAM TIP — "DENIED ≠ RESUBMIT"</strong>
+          Resubmitting a medically-denied claim generates a <strong>duplicate denial</strong> and burns through your timely filing window. The correct response to a medical necessity denial is to file an <strong>appeal with supporting clinical documentation</strong>. A rejected claim (kicked back before reaching the payer) can be corrected and resubmitted. Know the difference — it comes up on the CCMA exam.
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /panel-denials -->
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!--  TAB 5 — KNOWLEDGE CHECK                          -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <div class="panel-section" id="panel-check" data-print-title="Week 15 — Financial Tasks Knowledge Check (Module 11 · NHA CCMA)">
+
+    <div class="sec-label">Financial Tasks — Knowledge Check (Module 11 · CCMA Prep)</div>
+    <div style="font-size:.83rem;color:var(--muted);margin-bottom:1.2rem;line-height:1.6;">Answer each question in your own words. No notes allowed on this section — these terms appear directly on the CCMA exam. If you can explain it in plain English, you can answer it on the exam.</div>
+
+    <div class="kc-grid">
+      <div class="kc-card">
+        <div class="kc-num">Q1 · Workers' Compensation</div>
+        <div class="kc-q">What is Workers' Compensation and which type of patient visit would it cover? Who is billed?</div>
+        <textarea class="ans-area" rows="3" placeholder="Write your answer…"></textarea>
+      </div>
+      <div class="kc-card">
+        <div class="kc-num">Q2 · Patient Statement Call</div>
+        <div class="kc-q">A patient calls confused about a bill they received. What is the MA's role? Walk through how you handle the call.</div>
+        <textarea class="ans-area" rows="3" placeholder="Write your answer…"></textarea>
+      </div>
+      <div class="kc-card">
+        <div class="kc-num">Q3 · A/R Aging Report</div>
+        <div class="kc-q">What is an A/R Aging Report? What does it tell the clinic and why is it run regularly?</div>
+        <textarea class="ans-area" rows="3" placeholder="Write your answer…"></textarea>
+      </div>
+      <div class="kc-card">
+        <div class="kc-num">Q4 · Copay Collection</div>
+        <div class="kc-q">A patient pays their $25 copay in cash. Walk through exactly what the MA does — step by step — from collection to documentation.</div>
+        <textarea class="ans-area" rows="3" placeholder="Write your answer…"></textarea>
+      </div>
+      <div class="kc-card">
+        <div class="kc-num">Q5 · Cost-Sharing</div>
+        <div class="kc-q">What is the difference between a copay, a deductible, and coinsurance? Give an example of each.</div>
+        <textarea class="ans-area" rows="3" placeholder="Write your answer…"></textarea>
+      </div>
+      <div class="kc-card">
+        <div class="kc-num">Q6 · ABN</div>
+        <div class="kc-q">What form does a Medicare patient sign when a service may not be covered? When must it be given — and what happens if it's not?</div>
+        <textarea class="ans-area" rows="3" placeholder="Write your answer…"></textarea>
+      </div>
+      <div class="kc-card">
+        <div class="kc-num">Q7 · Assignment of Benefits</div>
+        <div class="kc-q">What does "Assignment of Benefits" mean and why does the patient sign this form?</div>
+        <textarea class="ans-area" rows="3" placeholder="Write your answer…"></textarea>
+      </div>
+      <div class="kc-card">
+        <div class="kc-num">Q8 · Birthday Rule</div>
+        <div class="kc-q">What is the birthday rule? When does it apply and which insurance is billed first?</div>
+        <textarea class="ans-area" rows="3" placeholder="Write your answer…"></textarea>
+      </div>
+    </div>
+
+    <div class="ccma-tip" style="margin-top:.5rem;">
+      <strong>💡 CCMA PREP NOTE</strong>
+      Billing and coding questions account for a significant portion of the CCMA exam. Medicare parts, insurance plan types, copay collection procedures, remittance advice processing, and the birthday rule are all high-frequency topics. Modifier use (especially Modifier 25), new vs. established patient status, and J code dosage calculations appear regularly. If you can explain these concepts clearly to a patient or a coworker, you can answer them on the exam.
+    </div>
+
+  </div><!-- /panel-check -->
+
+</main>
+
+<script>
+// ── CLOCK ──
+function updateClock(){
+  const t = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('clock').textContent = t;
+}
+updateClock(); setInterval(updateClock,1000);
+
+// ── TABS ──
+function showTab(id){
+  document.querySelectorAll('.panel-section').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+}
+
+// ── PATIENT SELECTOR ──
+function selectPatient(n){
+  document.querySelectorAll('.ps-btn').forEach((b,i)=>{
+    b.classList.toggle('selected', i===n);
+  });
+  for(let i=0;i<6;i++){
+    document.getElementById('enc-'+i).style.display = (i===n)?'block':'none';
+  }
+}
+
+// ── TASK TOGGLE ──
+function toggleTask(el){
+  el.classList.toggle('done');
+  el.querySelector('.task-check').textContent = el.classList.contains('done') ? '✓' : '';
+}
+
+// ── CLAIM FLOW ──
+const FLOW_STEPS = [
+  {
+    icon:'📝',title:'Step 1 — Patient Registration',
+    body:'Before any coding or billing can occur, the patient must be registered in the practice management (PM) system. All demographic information must be accurate: legal name, date of birth, address, and insurance information. This is the first point where errors can cause a claim to fail.',
+    steps:[
+      {t:'Verify patient identity',d:'Confirm legal name matches insurance card. Date of birth is one of the most common denial triggers when entered incorrectly.'},
+      {t:'Enter insurance information',d:'Copy the insurance ID, group number, and payer name exactly as they appear on the insurance card.'},
+      {t:'Collect signatures',d:'Patient signs: Assignment of Benefits, Notice of Privacy Practices, and Financial Responsibility form.'},
+      {t:'Verify eligibility',d:'Run eligibility check day-of-service — do NOT rely on last visit verification.'}
+    ]
+  },
+  {
+    icon:'🛡',title:'Step 2 — Insurance Verification',
+    body:'Insurance verification must be completed before every visit. This step confirms the patient is covered on the date of service, identifies copay/deductible amounts, and flags any prior authorization requirements.',
+    steps:[
+      {t:'Check coverage effective dates',d:'Confirm plan is active on the date of service — not just the card issue date.'},
+      {t:'Identify cost-sharing',d:'Determine copay, deductible (and how much is met), and coinsurance percentage.'},
+      {t:'Check for prior auth requirements',d:'Some procedures and referrals require prior authorization. Failing to get auth = denied claim.'},
+      {t:'Document findings',d:'Record all verification info in the EMR with date/time and representative name (if calling the payer).'}
+    ]
+  },
+  {
+    icon:'🩺',title:'Step 3 — Encounter & Documentation',
+    body:'The provider sees the patient and documents the encounter in the medical record. The documentation must support medical necessity — every service billed must be clinically justified by what is written in the chart.',
+    steps:[
+      {t:'Provider documents chief complaint, HPI, exam, and assessment',d:'The E/M level selected must match the complexity documented (time or key components).'},
+      {t:'MA assists and documents',d:'Vitals, medications reconciled, allergies reviewed, orders placed as directed.'},
+      {t:'Encounter form completed',d:'Provider selects diagnoses and procedures on the encounter form (superbill) after the visit.'},
+      {t:'Medical necessity supported',d:'Every CPT code must be linked to an ICD-10-CM code that clinically justifies the service.'}
+    ]
+  },
+  {
+    icon:'🔢',title:'Step 4 — Coding the Visit',
+    body:'The MA or coding specialist reviews the encounter documentation and assigns the correct ICD-10-CM, CPT, and HCPCS codes. A "clean claim" has accurate codes that are properly linked — no mismatches, no unsupported codes.',
+    steps:[
+      {t:'Assign ICD-10-CM codes',d:'Code to the highest level of specificity. Both the primary diagnosis AND any secondary conditions documented must be coded.'},
+      {t:'Assign CPT/HCPCS codes',d:'Match every procedure to its correct code. For HCPCS drug codes (J codes), calculate the exact dosage and units.'},
+      {t:'Apply modifiers if needed',d:'Modifier -25 (separately identifiable E/M), Modifier -50 (bilateral), etc. Pricing modifiers sequence before informational modifiers.'},
+      {t:'Verify code linkage',d:'Every CPT/HCPCS code must link to an ICD-10-CM code that supports medical necessity.'}
+    ]
+  },
+  {
+    icon:'📤',title:'Step 5 — Submit the Claim',
+    body:'Claims are submitted electronically through the practice management system to a clearinghouse, which scrubs the claim for errors before forwarding it to the payer. Claims should be submitted daily.',
+    steps:[
+      {t:'Create the claims batch',d:'In the PM system billing module, group completed encounters and initiate submission.'},
+      {t:'Clearinghouse review',d:'The clearinghouse checks for technical errors (invalid codes, formatting) and transmits clean claims to the payer.'},
+      {t:'Confirm receipt',d:'Check the submission report — confirm the number of claims submitted matches claims received. Any missing claims must be investigated immediately.'},
+      {t:'Track claims',d:'Run an insurance aging report weekly to follow up on unpaid claims before timely filing deadlines expire.'}
+    ]
+  },
+  {
+    icon:'📋',title:'Step 6 — Receive ERA / EOB',
+    body:'After the payer adjudicates the claim, they send an Electronic Remittance Advice (ERA) to the provider and an Explanation of Benefits (EOB) to the patient. The ERA details how each line was processed: paid, adjusted, or denied.',
+    steps:[
+      {t:'Access the ERA',d:'Find the ERA in the billing application under transactions or payments tab.'},
+      {t:'Review auto-post',d:'ERA payments and adjustments auto-post to patient accounts. Always verify the auto-post is correct — errors occur.'},
+      {t:'Calculate: Contractual Adjustment',d:'Billed − Allowed = Contractual Adjustment. Allowed − Payer Paid − Cost-sharing = Patient Responsibility.'},
+      {t:'Handle denials',d:'Review every denied line. Identify reason codes. Correct errors or file appeals as appropriate.'}
+    ]
+  },
+  {
+    icon:'💲',title:'Step 7 — Patient Statement',
+    body:'After the ERA is verified and corrected, a patient statement is generated for any remaining patient responsibility. Statements go out on a regular schedule and must be clear and easy to understand.',
+    steps:[
+      {t:'Generate statement',d:'Only generate statements AFTER the ERA has been reviewed and all corrections made. Never bill the wrong amount.'},
+      {t:'Include explanatory notes',d:'Use custom notes to explain what the insurance paid, what the adjustment was, and why the patient owes the remaining balance.'},
+      {t:'Multiple delivery options',d:'Statements can be mailed (batch print) or sent electronically through the patient portal.'},
+      {t:'Follow up',d:'If no payment is received after 30 days, a second statement goes out. After 90+ days, the account enters collections process per office policy.'}
+    ]
+  }
+];
+
+let currentFlowStep = 0;
+
+function renderFlowStep(n){
+  const s = FLOW_STEPS[n];
+  document.getElementById('flow-detail').innerHTML = `
+    <div class="fd-title">${s.icon} ${s.title}</div>
+    <div class="fd-body">${s.body}
+    <div class="fd-steps">
+      ${s.steps.map((st,i)=>`
+        <div class="fd-step">
+          <div class="fds-num">${i+1}</div>
+          <div class="fds-txt"><strong>${st.t}</strong>${st.d}</div>
+        </div>`).join('')}
+    </div></div>`;
+
+  document.querySelectorAll('.flow-step').forEach((el,i)=>{
+    el.classList.remove('done','active-step');
+    if(i < n) el.classList.add('done');
+    if(i === n) el.classList.add('active-step');
+  });
+}
+
+function showFlowStep(n){
+  currentFlowStep = n;
+  renderFlowStep(n);
+}
+function nextFlowStep(){
+  if(currentFlowStep < FLOW_STEPS.length-1){ currentFlowStep++; renderFlowStep(currentFlowStep); }
+}
+function prevFlowStep(){
+  if(currentFlowStep > 0){ currentFlowStep--; renderFlowStep(currentFlowStep); }
+}
+
+renderFlowStep(0);
+</script>
+</body>
+</html>
